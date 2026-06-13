@@ -1,0 +1,26 @@
+app:
+  name: AgentTrading
+  environment: local
+
+data:
+  provider: mock
+  cache_dir: artifacts/cache
+  default_index: "000300.SH"
+  default_stock_pool:
+    - "600519.SH"
+    - "000001.SZ"
+    - "300750.SZ"
+
+forecast:
+  horizons: [1, 5, 20]
+  market_regimes:
+    - bull
+    - neutral
+    - bear
+    - high_volatility
+  model_dir: artifacts/models
+
+risk:
+  max_single_name_weight: 0.1
+  max_industry_weight: 0.3
+  max_drawdown_alert: -0.08

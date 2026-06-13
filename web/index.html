@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AgentTrading</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --text: #17202a;
+        --muted: #687587;
+        --line: #d9dee7;
+        --accent: #0f766e;
+        --warn: #b45309;
+        --bad: #b91c1c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+        padding: 18px 24px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 22px;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 16px;
+        padding: 16px;
+      }
+
+      section {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      label {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 6px;
+      }
+
+      input {
+        width: 100%;
+        height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0 10px;
+        font-size: 14px;
+      }
+
+      button {
+        height: 38px;
+        border: 0;
+        border-radius: 6px;
+        background: var(--accent);
+        color: white;
+        cursor: pointer;
+        font-weight: 650;
+        margin-top: 12px;
+        width: 100%;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .metric {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 24px;
+        margin-top: 8px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 8px;
+        text-align: left;
+        font-size: 14px;
+      }
+
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .risk {
+        color: var(--warn);
+      }
+
+      @media (max-width: 860px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        .metric-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>AgentTrading A股预测与投研工作台</h1>
+      <div class="muted">Market forecast, stock selection, and risk review</div>
+    </header>
+
+    <main>
+      <section>
+        <label for="api">API 地址</label>
+        <input id="api" value="http://127.0.0.1:8000" />
+
+        <label for="benchmark" style="margin-top: 12px">大盘指数</label>
+        <input id="benchmark" value="000300.SH" />
+
+        <label for="symbols" style="margin-top: 12px">股票池</label>
+        <input id="symbols" value="600519.SH,000001.SZ,300750.SZ" />
+
+        <button id="run">运行 Agent 分析</button>
+      </section>
+
+      <section>
+        <div class="metric-grid">
+          <div class="metric">
+            <span class="muted">市场状态</span>
+            <strong id="regime">-</strong>
+          </div>
+          <div class="metric">
+            <span class="muted">建议仓位</span>
+            <strong id="position">-</strong>
+          </div>
+          <div class="metric">
+            <span class="muted">候选数量</span>
+            <strong id="count">-</strong>
+          </div>
+        </div>
+
+        <h2 style="font-size: 18px; margin-top: 18px">候选股票</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>代码</th>
+              <th>动作</th>
+              <th>评分</th>
+              <th>原因</th>
+            </tr>
+          </thead>
+          <tbody id="candidates"></tbody>
+        </table>
+
+        <h2 style="font-size: 18px; margin-top: 18px">Agent 总结</h2>
+        <p id="summary" class="muted">等待运行。</p>
+        <p id="risk" class="risk"></p>
+      </section>
+    </main>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      $("run").addEventListener("click", async () => {
+        const api = $("api").value.replace(/\/$/, "");
+        const benchmark = encodeURIComponent($("benchmark").value);
+        const symbols = encodeURIComponent($("symbols").value);
+        $("summary").textContent = "正在分析...";
+        const response = await fetch(`${api}/agents/research?benchmark=${benchmark}&symbols=${symbols}`);
+        const report = await response.json();
+
+        $("regime").textContent = report.market.regime;
+        $("position").textContent = `${Math.round(report.market.suggested_position * 100)}%`;
+        $("count").textContent = report.candidates.length;
+        $("summary").textContent = report.summary;
+        $("risk").textContent = report.risk_review;
+
+        $("candidates").innerHTML = report.candidates
+          .map(
+            (item) => `
+              <tr>
+                <td>${item.symbol}</td>
+                <td>${item.action}</td>
+                <td>${item.score.toFixed(3)}</td>
+                <td>${item.reason}</td>
+              </tr>
+            `,
+          )
+          .join("");
+      });
+    </script>
+  </body>
+</html>
