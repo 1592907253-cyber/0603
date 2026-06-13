@@ -43,13 +43,13 @@ class ResearchWorkflow:
 
         candidates.sort(key=lambda item: item.score, reverse=True)
         summary = (
-            f"Market regime is {market.regime}; suggested position is "
-            f"{market.suggested_position:.0%}. Top candidate is {candidates[0].symbol}."
+            f"当前大盘状态为 {market.regime}，建议仓位约 {market.suggested_position:.0%}。"
+            f"综合评分最高的候选标的是 {candidates[0].symbol}。"
         )
         risk_review = (
-            "Risk agent found no blocking issue."
+            "风险复核：暂未发现需要一票否决的风险。"
             if not risk_notes
-            else "Risk agent warnings: " + " | ".join(risk_notes)
+            else "风险复核提示：" + " | ".join(risk_notes)
         )
         return AgentReport(
             market=market,
