@@ -27,3 +27,23 @@ def test_stock_forecast_returns_valid_action() -> None:
     assert result.action in {"buy", "hold", "avoid"}
     assert 0 <= result.outperform_probability <= 1
     assert 0 <= result.drawdown_risk <= 1
+
+
+def test_prediction_chart_contains_history_and_future() -> None:
+    provider = MockAshareDataProvider()
+    end = date(2026, 6, 13)
+    history = provider.history(MarketDataRequest("000300.SH", end - timedelta(days=260), end))
+
+    result = HeuristicForecastModel().prediction_chart("000300.SH", history)
+
+    assert result.history
+    assert result.future
+    assert all(point.predicted for point in result.future)
+    assert "未来" in result.analysis
+    assert result.analysis_sections
+    assert result.strategy_description
+    assert result.factor_contributions
+    assert result.indicators
+    assert result.validation_metrics
+    assert result.model_diagnostics
+    assert result.selected_model_mode
