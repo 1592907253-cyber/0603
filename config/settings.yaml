@@ -1,5 +1,7 @@
 app:
   name: AgentTrading
+  group: "第40组"
+  team_name: "yes茄豆"
   environment: local
 
 data:

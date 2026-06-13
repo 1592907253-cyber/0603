@@ -25,9 +25,13 @@ data = [
   "tushare>=1.4",
 ]
 ml = [
-  "lightgbm>=4.4",
-  "catboost>=1.2",
   "shap>=0.46",
+]
+deep = [
+  "torch>=2.2",
+]
+qlib = [
+  "pyqlib>=0.9",
 ]
 agent = [
   "langgraph>=0.2",

@@ -1,5 +1,9 @@
 # Architecture
 
+Project: AgentTrading
+
+Team: 第40组 yes茄豆
+
 ## Layers
 
 1. Data providers

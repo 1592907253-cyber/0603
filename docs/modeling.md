@@ -1,5 +1,7 @@
 # Forecast Modeling Plan
 
+Team: 第40组 yes茄豆
+
 ## Targets
 
 Market index:
