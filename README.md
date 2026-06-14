@@ -24,6 +24,21 @@ explainable reports.
 - Lightweight browser dashboard with all A-share search, ECharts K-line chart, and model diagnostics.
 - Simple backtest utilities for validating prediction-driven strategies.
 
+## Latest Version Highlights
+
+This enhanced version focuses on making the project more complete for hackathon
+review and live demonstration:
+
+- Frontend/backend separated launch: FastAPI runs on `8000`, web dashboard runs on `5173`.
+- Professional tabbed dashboard: overview, K-line prediction, opportunity scan, and model diagnostics.
+- A-share Fear Index: a VIX-inspired 0-100 risk proxy that influences market regime,
+  position sizing, risk review, and factor explanations.
+- Real chart-first opportunity scan: sector and stock opportunity cards prefer real
+  K-line/price trend data with high, low, and current markers.
+- Faster all-A-share search: AKShare symbol cache, timeout fallback, and immediate local feedback.
+- Select-any-stock analysis: search or add any A-share stock, then run Agent analysis for that symbol.
+- Better submission polish: startup scripts, validation script, changelog, and updated demo flow.
+
 ## Problem Statement
 
 China A-share investors face noisy market data, rapidly rotating sectors, and
@@ -53,6 +68,11 @@ forecasting and risk-aware decision support.
 - Explainable Output
   - Gives factor-level explanations such as trend, momentum, volatility, and liquidity.
   - Shows prediction strategy, factor values, directional impact, weights, and reasoning.
+- A-share Fear Index
+  - Adds a VIX-inspired 0-100 market stress proxy for China A-share forecasting.
+  - Uses realized volatility, drawdown, downside-day ratio, gap-down pressure,
+    volume abnormality, and MA20 breakdown instead of requiring an options data feed.
+  - Feeds into market regime, position sizing, risk review, and factor explanations.
 - Predicted K-Line Chart
   - Generates historical candlesticks plus future projected candlesticks for indices or stocks.
   - Supports market index and individual stock selection from the web dashboard.
@@ -101,26 +121,38 @@ py -m venv .venv
 python -m pip install -e ".[dev,data]"
 ```
 
-### 2. Run API
+### 2. Run Backend API
 
 ```powershell
 uvicorn agent_trading.api.main:app --reload --host 127.0.0.1 --port 8000
 ```
-
-Then open:
-
-```text
-web/index.html
-```
-
-The default app uses deterministic mock data so the demo can run without data
-vendor credentials.
 
 On Windows, the safest way to avoid using the wrong Python interpreter is:
 
 ```powershell
 .\scripts\start_api.ps1
 ```
+
+### 3. Run Frontend Web App
+
+Open a second PowerShell terminal:
+
+```powershell
+.\scripts\start_web.ps1
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5173
+```
+
+The frontend and backend are separated: the static web app runs on port `5173`,
+and the FastAPI service runs on port `8000`. The API address can also be changed
+from the dashboard sidebar.
+
+The default app uses deterministic mock data so the demo can run without data
+vendor credentials.
 
 ## Enable Real AKShare Data
 
@@ -322,13 +354,17 @@ GET /agents/research?benchmark=000300.SH&symbols=600519.SH,000001.SZ,300750.SZ
 .
 ├── config/                  # YAML configuration
 ├── docs/                    # Architecture and modeling documents
+├── scripts/                 # Startup and validation scripts
+│   ├── start_api.ps1         # Backend API startup
+│   ├── start_web.ps1         # Frontend static web startup
+│   └── check_project.ps1     # Compile, test, and frontend health check
 ├── src/agent_trading/
 │   ├── agents/              # Agent workflow
 │   ├── api/                 # FastAPI application
 │   ├── backtesting/         # Strategy validation utilities
 │   ├── data/                # Data provider interfaces
 │   ├── features/            # Feature engineering
-│   ├── models/              # Forecasting services
+│   ├── models/              # Forecasting, ML, deep learning, and fear index services
 │   ├── pipelines/           # Runnable experiment pipelines
 │   └── training/            # Labels, datasets, baseline training
 ├── tests/                   # Unit tests

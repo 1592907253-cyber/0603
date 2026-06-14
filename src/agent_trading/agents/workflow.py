@@ -42,8 +42,9 @@ class ResearchWorkflow:
                 risk_notes.append(f"{symbol}: {', '.join(forecast.risks)}")
 
         candidates.sort(key=lambda item: item.score, reverse=True)
+        fear_text = f"，恐慌指数为 {market.fear_index.score:.1f}（{market.fear_index.level}）" if market.fear_index else ""
         summary = (
-            f"当前大盘状态为 {market.regime}，建议仓位约 {market.suggested_position:.0%}。"
+            f"当前大盘状态为 {market.regime}，建议仓位约 {market.suggested_position:.0%}{fear_text}。"
             f"综合评分最高的候选标的是 {candidates[0].symbol}。"
         )
         risk_review = (

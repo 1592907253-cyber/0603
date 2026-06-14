@@ -51,6 +51,12 @@ Current implementation supports:
 - FastAPI endpoints
 - static dashboard
 - training dataset construction
+- frontend/backend separated startup
+- professional tabbed dashboard
+- A-share Fear Index for market stress and position sizing
+- real sector and stock trend charts inside opportunity scan cards
+- select-any-stock Agent analysis from search results
+- cached all-A-share symbol search with timeout fallback
 
 ## How To Run
 
@@ -59,36 +65,64 @@ cd E:\AgentTrading
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev,data]"
-.\.venv\Scripts\python.exe -m uvicorn agent_trading.api.main:app --reload --host 127.0.0.1 --port 8000
+.\scripts\start_api.ps1
+```
+
+Open a second terminal:
+
+```powershell
+.\scripts\start_web.ps1
 ```
 
 Open:
 
 ```text
-web/index.html
+http://127.0.0.1:5173
 ```
 
-Windows shortcut:
-
-```powershell
-.\scripts\start_api.ps1
-```
+The dashboard and API are separated. The frontend runs on port `5173`; the
+FastAPI backend runs on port `8000`.
 
 ## Demo Script
 
-1. Open the dashboard.
-2. Keep benchmark as `000300.SH`.
-3. Enter stock pool: `600519.SH,000001.SZ,300750.SZ`.
-4. Click "运行 Agent 分析".
-5. Show market regime, suggested position, candidate ranking, summary, and risk review.
-6. Open API docs at `http://127.0.0.1:8000/docs`.
-7. Show endpoints:
+1. Start backend and frontend with `scripts/start_api.ps1` and `scripts/start_web.ps1`.
+2. Open `http://127.0.0.1:5173`.
+3. Search an A-share stock such as `洛阳钼业` or `603993`.
+4. Select it as the analysis target and click "运行 Agent 分析".
+5. Show the overview tab:
+   - market regime
+   - suggested position
+   - A-share Fear Index
+   - candidate ranking
+   - Chinese risk review
+6. Open the K-line prediction tab:
+   - ECharts candlestick chart
+   - MA5/10/20/60/120/250 curves
+   - historical and predicted buy/sell markers
+   - model consensus and factor explanation
+7. Open the opportunity scan tab:
+   - scan potential sectors
+   - scan all-A-share candidates grouped by sector
+   - show real trend charts with high/low/current markers when data is available
+8. Open API docs at `http://127.0.0.1:8000/docs`.
+9. Show endpoints:
    - `/forecast/market/{symbol}`
    - `/forecast/stock/{symbol}`
    - `/chart/prediction/{symbol}`
    - `/opportunities/sectors`
    - `/opportunities/stocks/grouped`
+   - `/symbols/search`
    - `/agents/research`
+
+## This Version's Main Improvements
+
+- More professional frontend design with tabs instead of a long single page.
+- Real K-line/price charts in sector and stock opportunity cards.
+- A-share Fear Index added to market forecast, risk control, and dashboard.
+- Faster and clearer stock search with local fallback.
+- Any searched stock can become the current Agent analysis target.
+- Frontend/backend separated startup for a more standard project structure.
+- Submission documents and changelog updated for GitHub review.
 
 ## Commit Requirement Reminder
 

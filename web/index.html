@@ -8,20 +8,22 @@
     <style>
       :root {
         color-scheme: light;
-        --bg: #f3f5fa;
+        --bg: #f1f4f8;
         --panel: #ffffff;
-        --soft: #f8faff;
-        --text: #151b2d;
+        --panel-2: #f8fafc;
+        --soft: #f5f7fb;
+        --text: #111827;
         --muted: #667085;
-        --line: #d7deea;
-        --primary: #3346d3;
-        --primary-2: #7c3aed;
-        --red: #d92d20;
-        --blue: #2563eb;
-        --purple: #7c3aed;
-        --warn: #b54708;
-        --down: #1f5f8b;
-        --shadow: 0 14px 34px rgba(21, 27, 45, 0.08);
+        --line: #d9e1ec;
+        --line-strong: #b9c4d4;
+        --primary: #1f4fd8;
+        --primary-2: #16213a;
+        --red: #c0262d;
+        --blue: #1f4fd8;
+        --purple: #5b46c8;
+        --warn: #b45309;
+        --down: #0e7490;
+        --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 10px 24px rgba(16, 24, 40, 0.04);
       }
 
       * {
@@ -42,10 +44,38 @@
         align-items: center;
         justify-content: space-between;
         gap: 18px;
-        padding: 16px 22px;
-        color: #fff;
-        background: linear-gradient(135deg, #111827 0%, #1d2b6f 54%, #5b21b6 100%);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+        padding: 14px 18px 13px;
+        color: #f8fafc;
+        background:
+          linear-gradient(90deg, rgba(31, 79, 216, 0.14), transparent 34%),
+          #0a1020;
+        border-bottom: 1px solid #202a3c;
+      }
+
+      .market-tape {
+        display: flex;
+        gap: 14px;
+        overflow-x: auto;
+        padding: 7px 12px;
+        color: #d4dbe8;
+        background: #111827;
+        border-bottom: 1px solid #243043;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .tape-item {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .tape-up {
+        color: #fca5a5;
+      }
+
+      .tape-down {
+        color: #7dd3fc;
       }
 
       h1,
@@ -57,7 +87,7 @@
 
       h1 {
         margin-bottom: 4px;
-        font-size: 22px;
+        font-size: 19px;
         letter-spacing: 0;
       }
 
@@ -73,16 +103,16 @@
 
       main {
         display: grid;
-        grid-template-columns: 360px minmax(0, 1fr);
-        gap: 16px;
-        padding: 16px;
+        grid-template-columns: 320px minmax(0, 1fr);
+        gap: 12px;
+        padding: 12px;
       }
 
       section {
         background: var(--panel);
         border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 14px;
+        border-radius: 7px;
+        padding: 12px;
         box-shadow: var(--shadow);
       }
 
@@ -96,7 +126,7 @@
       input,
       select {
         width: 100%;
-        height: 40px;
+        height: 37px;
         border: 1px solid var(--line);
         border-radius: 6px;
         padding: 0 10px;
@@ -105,15 +135,25 @@
         font-size: 14px;
       }
 
+      input:focus,
+      select:focus {
+        outline: 2px solid rgba(29, 78, 216, 0.15);
+        border-color: var(--primary);
+      }
+
       button {
         width: 100%;
-        height: 40px;
-        border: 0;
+        height: 38px;
+        border: 1px solid #1e40af;
         border-radius: 6px;
         color: #fff;
-        background: linear-gradient(135deg, var(--primary), var(--primary-2));
+        background: var(--primary);
         cursor: pointer;
         font-weight: 700;
+      }
+
+      button:hover {
+        background: #1e40af;
       }
 
       table {
@@ -125,7 +165,7 @@
       th,
       td {
         border-bottom: 1px solid var(--line);
-        padding: 9px 8px;
+        padding: 8px;
         text-align: left;
         vertical-align: top;
         font-size: 13px;
@@ -133,22 +173,22 @@
 
       th {
         color: var(--muted);
-        background: var(--soft);
+        background: #f6f8fc;
         font-weight: 700;
       }
 
       .subtitle {
-        color: #dbe4ff;
+        color: #aab7cf;
         font-size: 13px;
       }
 
       .status-pill {
         max-width: 420px;
-        border: 1px solid rgba(255, 255, 255, 0.35);
+        border: 1px solid #334155;
         border-radius: 999px;
-        padding: 7px 12px;
-        color: #eef2ff;
-        background: rgba(255, 255, 255, 0.12);
+        padding: 7px 10px;
+        color: #dbe4f0;
+        background: rgba(17, 24, 39, 0.76);
         font-size: 13px;
       }
 
@@ -159,12 +199,75 @@
         gap: 14px;
       }
 
+      .workspace-tabs {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px;
+        padding: 5px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(8px);
+        box-shadow: var(--shadow);
+      }
+
+      .tab-button {
+        height: 34px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        color: #526071;
+        background: transparent;
+        font-weight: 700;
+      }
+
+      .tab-button:hover {
+        color: var(--primary);
+        background: #eef4ff;
+      }
+
+      .tab-button.active {
+        color: #fff;
+        border-color: #1e40af;
+        background: #182c5f;
+      }
+
+      .tab-panel[hidden] {
+        display: none;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 12px;
+        align-self: start;
+        max-height: calc(100vh - 24px);
+        overflow: auto;
+        padding-right: 2px;
+      }
+
+      .sidebar section {
+        border-color: #cfd8e6;
+        background: #ffffff;
+      }
+
+      .sidebar .panel-title {
+        color: #0f172a;
+      }
+
       .panel-title {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        margin-bottom: 8px;
+        margin: -1px 0 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .panel-title h2 {
+        margin-bottom: 0;
       }
 
       .muted {
@@ -198,21 +301,22 @@
         overflow: auto;
         margin-top: 8px;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: 7px;
+        background: #fff;
       }
 
       .search-item {
         display: flex;
         justify-content: space-between;
         gap: 8px;
-        padding: 10px;
+        padding: 9px 10px;
         border-bottom: 1px solid var(--line);
         cursor: pointer;
         font-size: 14px;
       }
 
       .search-item:hover {
-        background: #eef2ff;
+        background: #f6f8fc;
       }
 
       .search-item:last-child {
@@ -233,7 +337,7 @@
         border: 1px solid var(--line);
         border-radius: 999px;
         padding: 5px 9px;
-        background: #f3f6ff;
+        background: #f7f9fd;
         font-size: 13px;
       }
 
@@ -249,21 +353,31 @@
 
       .metric-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 10px;
       }
 
       .metric {
+        position: relative;
+        overflow: hidden;
         border: 1px solid var(--line);
         border-radius: 8px;
-        padding: 12px;
-        background: var(--soft);
+        padding: 13px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      }
+
+      .metric::before {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 3px;
+        content: "";
+        background: var(--primary);
       }
 
       .metric strong {
         display: block;
         margin-top: 6px;
-        font-size: 23px;
+        font-size: 22px;
       }
 
       .toolbar {
@@ -271,13 +385,17 @@
         grid-template-columns: 1fr 1fr 160px 120px;
         gap: 10px;
         align-items: end;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f8fafc;
       }
 
       #kline {
         width: 100%;
         height: 540px;
-        border: 1px solid var(--line);
+        border: 1px solid var(--line-strong);
         border-radius: 8px;
         background: #fff;
       }
@@ -351,15 +469,167 @@
         box-shadow: none;
       }
 
+      .opportunity-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .opportunity-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+        transition:
+          border-color 120ms ease,
+          box-shadow 120ms ease,
+          transform 120ms ease;
+      }
+
+      .opportunity-card:hover,
+      .stock-mini-card:hover {
+        border-color: #b7c4d8;
+        box-shadow: 0 10px 26px rgba(16, 24, 40, 0.08);
+        transform: translateY(-1px);
+      }
+
+      .opportunity-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: start;
+      }
+
+      .opportunity-title {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        min-width: 0;
+      }
+
+      .opportunity-title strong {
+        font-size: 15px;
+      }
+
+      .rating-pill {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        padding: 3px 8px;
+        color: #1e40af;
+        background: #eff6ff;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .opportunity-score {
+        min-width: 58px;
+        padding: 5px 8px;
+        border: 1px solid #dbeafe;
+        border-radius: 6px;
+        color: var(--primary);
+        background: #eff6ff;
+        font-weight: 800;
+        text-align: right;
+      }
+
+      .mini-chart {
+        width: 100%;
+        height: 164px;
+        margin-top: 10px;
+        border: 1px solid #e6ebf5;
+        border-radius: 8px;
+        background: #fbfcff;
+      }
+
+      .info-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .info-chip {
+        min-height: 48px;
+        border: 1px solid #e6ebf5;
+        border-radius: 8px;
+        padding: 7px 8px;
+        background: #f8faff;
+      }
+
+      .info-chip span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .info-chip strong {
+        display: block;
+        margin-top: 3px;
+        font-size: 14px;
+      }
+
+      .opportunity-notes {
+        display: grid;
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      .stock-group-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 12px;
+        background: #fff;
+      }
+
+      .stock-card-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .stock-mini-card {
+        border: 1px solid #e6ebf5;
+        border-radius: 8px;
+        padding: 10px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+        transition:
+          border-color 120ms ease,
+          box-shadow 120ms ease,
+          transform 120ms ease;
+      }
+
+      .stock-card-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .stock-card-actions button {
+        width: auto;
+        min-width: 76px;
+        height: 30px;
+        padding: 0 10px;
+        font-size: 12px;
+      }
+
       @media (max-width: 980px) {
         main,
         .report,
-        .sections {
+        .sections,
+        .opportunity-grid,
+        .stock-card-grid {
           grid-template-columns: 1fr;
         }
 
         .toolbar,
-        .metric-grid {
+        .metric-grid,
+        .info-strip {
           grid-template-columns: 1fr;
         }
       }
@@ -368,11 +638,20 @@
   <body>
     <header>
       <div>
-        <h1>AgentTrading A股智能投研终端</h1>
-        <div class="subtitle">第40组 yes茄豆 · 大盘预测 · 个股预测 · 板块机会 · 多模型诊断</div>
+        <h1>AgentTrading Pro</h1>
+        <div class="subtitle">第40组 yes茄豆 · A股智能投研终端 · 预测 / 扫描 / 诊断</div>
       </div>
       <div class="status-pill" id="status">离线演示已就绪</div>
     </header>
+    <div class="market-tape">
+      <span class="tape-item">上证指数 <strong class="tape-up">+0.42%</strong></span>
+      <span class="tape-item">深证成指 <strong class="tape-down">-0.18%</strong></span>
+      <span class="tape-item">创业板指 <strong class="tape-up">+0.31%</strong></span>
+      <span class="tape-item">市场状态 <strong id="tapeRegime">等待分析</strong></span>
+      <span class="tape-item">建议仓位 <strong id="tapePosition">-</strong></span>
+      <span class="tape-item">恐慌指数 <strong id="tapeFear">-</strong></span>
+      <span class="tape-item">模型共识 <strong id="tapeConsensus">等待生成</strong></span>
+    </div>
 
     <main>
       <aside class="sidebar">
@@ -401,6 +680,10 @@
           <label for="benchmark">基准指数</label>
           <select id="benchmark"></select>
 
+          <label for="analysisSymbol">分析标的</label>
+          <select id="analysisSymbol"></select>
+          <p class="muted" style="margin:6px 0 0">搜索或加入股票池后，可在这里切换任意个股进行单独分析。</p>
+
           <button id="run" style="margin-top: 14px">运行 Agent 分析</button>
           <div class="mini-actions">
             <button id="sectorBtn" type="button">扫描潜力板块</button>
@@ -410,147 +693,156 @@
       </aside>
 
       <div class="workspace">
-        <section>
-          <div class="panel-title"><h2>市场概览</h2></div>
-          <div class="metric-grid">
-            <div class="metric">
-              <span class="muted">市场状态</span>
-              <strong id="regime">-</strong>
-            </div>
-            <div class="metric">
-              <span class="muted">建议仓位</span>
-              <strong id="position">-</strong>
-            </div>
-            <div class="metric">
-              <span class="muted">候选数量</span>
-              <strong id="count">-</strong>
-            </div>
-          </div>
-        </section>
+        <nav class="workspace-tabs" aria-label="功能区">
+          <button class="tab-button active" type="button" data-tab="overview">总览</button>
+          <button class="tab-button" type="button" data-tab="kline">K线预测</button>
+          <button class="tab-button" type="button" data-tab="opportunities">机会扫描</button>
+          <button class="tab-button" type="button" data-tab="diagnostics">模型诊断</button>
+        </nav>
 
-        <section>
-          <div class="panel-title"><h2>K线预测</h2></div>
-          <div class="toolbar">
-            <div>
-              <label for="chartSymbol">走势预测标的</label>
-              <select id="chartSymbol"></select>
+        <div id="tab-overview" class="tab-panel">
+          <section>
+            <div class="panel-title"><h2>市场概览</h2></div>
+            <div class="metric-grid">
+              <div class="metric">
+                <span class="muted">市场状态</span>
+                <strong id="regime">-</strong>
+              </div>
+              <div class="metric">
+                <span class="muted">建议仓位</span>
+                <strong id="position">-</strong>
+              </div>
+              <div class="metric">
+                <span class="muted">候选数量</span>
+                <strong id="count">-</strong>
+              </div>
+              <div class="metric">
+                <span class="muted">恐慌指数</span>
+                <strong id="fearIndex">-</strong>
+              </div>
             </div>
-            <div>
-              <label for="chartMode">图表内容</label>
-              <select id="chartMode">
-                <option value="both">历史 + 未来预测K线</option>
-                <option value="future">仅未来预测K线</option>
-                <option value="history">仅历史K线</option>
-              </select>
-            </div>
-            <div>
-              <label for="modelMode">预测模型</label>
-              <select id="modelMode">
-                <option value="ensemble">综合模型</option>
-                <option value="factor">多因子模型</option>
-                <option value="ml">机器学习模型</option>
-                <option value="deep">深度学习GRU</option>
-              </select>
-            </div>
-            <button id="chartBtn">生成K线图</button>
-          </div>
-
-          <div id="kline"></div>
-
-          <div class="report">
-            <div>
-              <strong>中文走势分析</strong>
-              <p id="analysis" class="muted">等待生成。</p>
-            </div>
-            <div>
-              <strong>风险复核</strong>
-              <p id="risk" class="risk">等待生成。</p>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <div class="panel-title"><h2>预测解释</h2></div>
-          <div id="sections" class="sections"></div>
-
-          <h2 style="font-size: 18px; margin-top: 18px">多因子预测策略与具体原因</h2>
-          <section class="compact-section" style="padding: 12px; margin: 0">
-            <strong>当前预测策略</strong>
-            <p id="strategy" class="muted">等待生成。</p>
-            <p class="muted">
-              当前模型综合趋势、相对强弱、均线结构、MA20支撑、量能、波动、回撤和新闻情绪等信号。
-              因子分数为标准化后的方向性评分，不是收益率本身。
-            </p>
           </section>
-          <div class="factor-table">
+
+          <section>
+            <div class="panel-title"><h2>候选股票</h2></div>
             <table>
               <thead>
                 <tr>
-                  <th>因子</th>
-                  <th>因子分数</th>
-                  <th>影响</th>
-                  <th>权重</th>
+                  <th>代码</th>
+                  <th>动作</th>
+                  <th>评分</th>
                   <th>原因</th>
                 </tr>
               </thead>
-              <tbody id="factors"></tbody>
+              <tbody id="candidates"></tbody>
             </table>
-          </div>
-        </section>
-
-        <section>
-          <div class="panel-title"><h2>模型诊断</h2></div>
-          <h2 style="font-size: 18px">历史相似行情校准</h2>
-          <div id="validation" class="sections"></div>
-
-          <h2 style="font-size: 18px; margin-top: 18px">机器学习模型诊断</h2>
-          <div id="mlDiagnostics" class="sections"></div>
-
-          <h2 style="font-size: 18px; margin-top: 18px">模型共识与分歧</h2>
-          <section class="compact-section" style="padding: 12px; margin: 0">
-            <strong id="consensusTitle">等待生成。</strong>
-            <p id="consensusSummary" class="muted"></p>
-            <ul id="consensusDetails" class="muted"></ul>
           </section>
-        </section>
 
-        <section>
-          <div class="panel-title"><h2>板块与全A股机会</h2></div>
-          <h2 style="font-size: 18px">潜力板块</h2>
-          <p id="sectorSummary" class="muted">等待扫描。</p>
-          <table>
-            <thead>
-              <tr>
-                <th>板块</th>
-                <th>评级</th>
-                <th>评分</th>
-                <th>涨跌幅</th>
-                <th>领涨股</th>
-                <th>机会逻辑 / 风险 / 观察点</th>
-              </tr>
-            </thead>
-            <tbody id="sectors"></tbody>
-          </table>
+          <section>
+            <div class="panel-title"><h2>预测解释</h2></div>
+            <div id="sections" class="sections"></div>
+          </section>
+        </div>
 
-          <h2 style="font-size: 18px; margin-top: 18px">全A股潜力候选</h2>
-          <p id="stockSummary" class="muted">等待扫描。</p>
-          <div id="stockGroups"></div>
-        </section>
+        <div id="tab-kline" class="tab-panel" hidden>
+          <section>
+            <div class="panel-title"><h2>K线预测</h2></div>
+            <div class="toolbar">
+              <div>
+                <label for="chartSymbol">走势预测标的</label>
+                <select id="chartSymbol"></select>
+              </div>
+              <div>
+                <label for="chartMode">图表内容</label>
+                <select id="chartMode">
+                  <option value="both">历史 + 未来预测K线</option>
+                  <option value="future">仅未来预测K线</option>
+                  <option value="history">仅历史K线</option>
+                </select>
+              </div>
+              <div>
+                <label for="modelMode">预测模型</label>
+                <select id="modelMode">
+                  <option value="ensemble">综合模型</option>
+                  <option value="factor">多因子模型</option>
+                  <option value="ml">机器学习模型</option>
+                  <option value="deep">深度学习GRU</option>
+                </select>
+              </div>
+              <button id="chartBtn">生成K线图</button>
+            </div>
 
-        <section>
-          <div class="panel-title"><h2>候选股票</h2></div>
-          <table>
-            <thead>
-              <tr>
-                <th>代码</th>
-                <th>动作</th>
-                <th>评分</th>
-                <th>原因</th>
-              </tr>
-            </thead>
-            <tbody id="candidates"></tbody>
-          </table>
-        </section>
+            <div id="kline"></div>
+
+            <div class="report">
+              <div>
+                <strong>中文走势分析</strong>
+                <p id="analysis" class="muted">等待生成。</p>
+              </div>
+              <div>
+                <strong>风险复核</strong>
+                <p id="risk" class="risk">等待生成。</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div id="tab-opportunities" class="tab-panel" hidden>
+          <section>
+            <div class="panel-title"><h2>板块与全A股机会</h2></div>
+            <h2 style="font-size: 18px">潜力板块</h2>
+            <p id="sectorSummary" class="muted">等待扫描。</p>
+            <div id="sectors" class="opportunity-grid"></div>
+
+            <h2 style="font-size: 18px; margin-top: 18px">全A股潜力候选</h2>
+            <p id="stockSummary" class="muted">等待扫描。</p>
+            <div id="stockGroups"></div>
+          </section>
+        </div>
+
+        <div id="tab-diagnostics" class="tab-panel" hidden>
+          <section>
+            <div class="panel-title"><h2>多因子预测策略与具体原因</h2></div>
+            <section class="compact-section" style="padding: 12px; margin: 0">
+              <strong>当前预测策略</strong>
+              <p id="strategy" class="muted">等待生成。</p>
+              <p class="muted">
+                当前模型综合趋势、相对强弱、均线结构、MA20支撑、量能、波动、回撤和新闻情绪等信号。
+                因子分数为标准化后的方向性评分，不是收益率本身。
+              </p>
+            </section>
+            <div class="factor-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>因子</th>
+                    <th>因子分数</th>
+                    <th>影响</th>
+                    <th>权重</th>
+                    <th>原因</th>
+                  </tr>
+                </thead>
+                <tbody id="factors"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <div class="panel-title"><h2>模型诊断</h2></div>
+            <h2 style="font-size: 18px">历史相似行情校准</h2>
+            <div id="validation" class="sections"></div>
+
+            <h2 style="font-size: 18px; margin-top: 18px">机器学习模型诊断</h2>
+            <div id="mlDiagnostics" class="sections"></div>
+
+            <h2 style="font-size: 18px; margin-top: 18px">模型共识与分歧</h2>
+            <section class="compact-section" style="padding: 12px; margin: 0">
+              <strong id="consensusTitle">等待生成。</strong>
+              <p id="consensusSummary" class="muted"></p>
+              <ul id="consensusDetails" class="muted"></ul>
+            </section>
+          </section>
+        </div>
       </div>
     </main>
 
@@ -571,6 +863,7 @@
       ];
       let pool = ["600519.SH", "000001.SZ", "300750.SZ"];
       let chartInstance = null;
+      const miniCharts = new Map();
 
       const fallbackReport = {
         market: { regime: "震荡均衡", suggested_position: 0.5 },
@@ -600,6 +893,36 @@
         $("chartSymbol").innerHTML = symbols
           .map((symbol) => `<option value="${symbol}">${nameOf(symbol)} ${symbol}</option>`)
           .join("");
+        renderAnalysisOptions();
+      }
+
+      function renderAnalysisOptions() {
+        const previous = $("analysisSymbol").value;
+        const stocks = universe.filter((item) => item.kind === "stock" && pool.includes(item.symbol));
+        const options = stocks.length
+          ? stocks
+          : universe.filter((item) => item.kind === "stock").slice(0, 8);
+        $("analysisSymbol").innerHTML = options
+          .map((item) => `<option value="${item.symbol}">${item.name} ${item.symbol}</option>`)
+          .join("");
+        if (previous && options.some((item) => item.symbol === previous)) {
+          $("analysisSymbol").value = previous;
+        }
+      }
+
+      function activateTab(tabName) {
+        document.querySelectorAll(".tab-button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.tab === tabName);
+        });
+        document.querySelectorAll(".tab-panel").forEach((panel) => {
+          panel.hidden = panel.id !== `tab-${tabName}`;
+        });
+        requestAnimationFrame(() => {
+          if (chartInstance) chartInstance.resize();
+          for (const instance of miniCharts.values()) {
+            instance.resize();
+          }
+        });
       }
 
       function renderPool() {
@@ -622,9 +945,26 @@
         });
       }
 
-      async function fetchJson(path) {
+      async function fetchJson(path, options = {}) {
         const api = $("api").value.replace(/\/$/, "");
-        const response = await fetch(`${api}${path}`);
+        const { timeoutMs = 0 } = options;
+        const controller = timeoutMs ? new AbortController() : null;
+        const timer = timeoutMs
+          ? setTimeout(() => controller.abort(), timeoutMs)
+          : null;
+        let response;
+        try {
+          response = await fetch(`${api}${path}`, {
+            signal: controller ? controller.signal : undefined,
+          });
+        } catch (error) {
+          if (error.name === "AbortError") {
+            throw new Error("请求超时，已返回本地兜底结果");
+          }
+          throw error;
+        } finally {
+          if (timer) clearTimeout(timer);
+        }
         if (!response.ok) {
           let message = `API ${response.status}`;
           try {
@@ -652,31 +992,30 @@
 
       async function searchSymbols(query) {
         const value = query.trim().toLowerCase();
-        $("searchStatus").textContent = value ? `正在搜索：${query.trim()}...` : "显示常用指数和样例股票。";
-        let items = [];
+        const localItems = value
+          ? universe.filter(
+              (item) =>
+                item.symbol.toLowerCase().includes(value) ||
+                item.name.toLowerCase().includes(value) ||
+                item.alias.includes(value),
+            )
+          : universe.slice(0, 8);
+        renderSearchResults(localItems, query, value ? `正在搜索：${query.trim()}... 本地先返回 ${localItems.length} 条结果。` : "显示常用指数和样例股票。");
+        if (!value) return;
         try {
-          if (value) {
-            items = await fetchJson(`/symbols/search?q=${encodeURIComponent(value)}`);
-          }
+          const items = await fetchJson(`/symbols/search?q=${encodeURIComponent(value)}`, { timeoutMs: 3200 });
+          renderSearchResults(items, query, items.length ? `找到 ${items.length} 条结果，点击任意结果生成趋势图。` : `没有找到 “${query.trim()}” 的匹配结果。请尝试股票代码，例如 603993。`);
         } catch (error) {
-          $("searchStatus").textContent = `后端搜索失败：${error.message}。正在使用本地兜底股票表。`;
+          renderSearchResults(localItems, query, `远程搜索较慢或失败：${error.message}。已返回本地兜底结果。`);
         }
+      }
+
+      function renderSearchResults(items, query, statusText) {
+        $("searchStatus").textContent = statusText;
         if (!items.length) {
-          items = value
-            ? universe.filter(
-                (item) =>
-                  item.symbol.toLowerCase().includes(value) ||
-                  item.name.toLowerCase().includes(value) ||
-                  item.alias.includes(value),
-              )
-            : universe.slice(0, 8);
-        }
-        if (!items.length) {
-          $("searchStatus").textContent = `没有找到 “${query.trim()}” 的匹配结果。请尝试股票代码，例如 603993。`;
           $("searchList").innerHTML = `<div class="search-item"><span>没有找到匹配结果</span><span class="muted">请换代码或名称</span></div>`;
           return;
         }
-        $("searchStatus").textContent = value ? `找到 ${items.length} 条结果，点击任意结果生成趋势图。` : "显示常用指数和样例股票。";
         $("searchList").innerHTML = items
           .map(
             (item) => `
@@ -707,7 +1046,11 @@
             renderPool();
             renderChartOptions();
             $("chartSymbol").value = symbol;
+            if (meta.kind !== "index") {
+              $("analysisSymbol").value = symbol;
+            }
             $("status").textContent = `已选择 ${meta.name} ${symbol}，正在生成趋势图和预测...`;
+            activateTab("kline");
             await loadChart(symbol);
           });
         });
@@ -717,6 +1060,9 @@
         $("regime").textContent = report.market.regime;
         $("position").textContent = `${Math.round(report.market.suggested_position * 100)}%`;
         $("count").textContent = report.candidates.length;
+        $("tapeRegime").textContent = report.market.regime;
+        $("tapePosition").textContent = `${Math.round(report.market.suggested_position * 100)}%`;
+        renderFearIndex(report.market.fear_index);
         $("analysis").textContent = report.summary;
         $("risk").textContent = report.risk_review;
         $("candidates").innerHTML = report.candidates
@@ -731,6 +1077,17 @@
             `,
           )
           .join("");
+      }
+
+      function renderFearIndex(fear) {
+        if (!fear) {
+          $("fearIndex").textContent = "-";
+          $("tapeFear").textContent = "-";
+          return;
+        }
+        const label = `${Number(fear.score).toFixed(1)} · ${fear.level}`;
+        $("fearIndex").textContent = label;
+        $("tapeFear").textContent = label;
       }
 
       function renderSections(sections) {
@@ -809,10 +1166,292 @@
           details: [],
         };
         $("consensusTitle").textContent = `${consensus.disagreement_level} · 共识上涨概率 ${Math.round(Number(consensus.consensus_probability) * 100)}%`;
+        $("tapeConsensus").textContent = `${Math.round(Number(consensus.consensus_probability) * 100)}% · ${consensus.disagreement_level}`;
         $("consensusSummary").textContent = consensus.summary;
         $("consensusDetails").innerHTML = (consensus.details || [])
           .map((item) => `<li>${item}</li>`)
           .join("");
+      }
+
+      function disposeMiniCharts(prefix) {
+        for (const [id, instance] of miniCharts.entries()) {
+          if (id.startsWith(prefix)) {
+            instance.dispose();
+            miniCharts.delete(id);
+          }
+        }
+      }
+
+      function compactText(value, fallback = "暂无") {
+        if (value == null || value === "") return fallback;
+        return String(value);
+      }
+
+      function formatPct(value) {
+        return value == null || Number.isNaN(Number(value)) ? "暂无" : `${Number(value).toFixed(2)}%`;
+      }
+
+      function synthOpportunitySeries(item, type) {
+        const score = Number(item.score || 0);
+        const change = Number(item.change_pct || 0);
+        const volume = Number(item.volume_ratio || 1);
+        const turnover = Number(item.turnover_rate || 0);
+        const amountBoost = item.amount ? Math.min(Number(item.amount) / 1_000_000_000, 5) / 5 : 0;
+        const trendBias = Math.max(-1.2, Math.min(1.8, change / 4 + (score - 0.45) * 1.5));
+        const participation = Math.max(0, Math.min(1.4, (volume - 1) * 0.35 + turnover / 18 + amountBoost * 0.3));
+        const dates = ["T-9", "T-8", "T-7", "T-6", "T-5", "T-4", "T-3", "T-2", "T-1", "当前"];
+        const values = dates.map((_, index) => {
+          const wave = Math.sin((index + 1) * 0.9 + score * 3) * 0.35;
+          const slope = (index - 4.5) * trendBias * 0.22;
+          const late = index > 6 ? participation * (index - 6) * 0.32 : 0;
+          return Number((50 + slope + wave + late + score * 12).toFixed(2));
+        });
+        const current = values[values.length - 1];
+        const peak = Math.max(...values);
+        const peakIndex = values.indexOf(peak);
+        const label = type === "sector" ? "板块强度" : "候选强度";
+        const markPoints = [
+          {
+            name: "当前信号",
+            coord: [dates.length - 1, current],
+            value: score >= 0.65 ? "高潜力" : score >= 0.45 ? "偏强" : "观察",
+            itemStyle: { color: "#3346d3" },
+            label: { formatter: "当前", color: "#151b2d" },
+          },
+          {
+            name: "阶段高点",
+            coord: [peakIndex, peak],
+            value: "强度高点",
+            itemStyle: { color: "#d92d20" },
+            label: { formatter: "高点", color: "#151b2d" },
+          },
+        ];
+        if (change > 6 || score < 0.35) {
+          markPoints.push({
+            name: "风险提示",
+            coord: [Math.max(0, dates.length - 3), values[Math.max(0, dates.length - 3)]],
+            value: change > 6 ? "涨幅过热" : "优势不足",
+            itemStyle: { color: "#b54708" },
+            label: { formatter: "风险", color: "#151b2d" },
+          });
+        }
+        return { dates, values, label, markPoints };
+      }
+
+      function sectorTrendSeries(item) {
+        const points = item.trend_points || [];
+        if (!points.length) return null;
+        const categories = points.map((point) => point.date);
+        const values = points.map((point) => Number(point.close));
+        const ma20 = points.map((point) => (point.ma20 == null ? null : Number(point.ma20)));
+        const ma60 = points.map((point) => (point.ma60 == null ? null : Number(point.ma60)));
+        const high = Math.max(...values);
+        const low = Math.min(...values);
+        const highIndex = values.indexOf(high);
+        const lowIndex = values.indexOf(low);
+        const currentIndex = values.length - 1;
+        return {
+          categories,
+          values,
+          ma20,
+          ma60,
+          source: points[currentIndex]?.source || item.name,
+          markPoints: [
+            {
+              name: "阶段高点",
+              coord: [categories[highIndex], high],
+              value: high.toFixed(2),
+              itemStyle: { color: "#c81e1e" },
+              label: { formatter: "高点", color: "#151b2d" },
+            },
+            {
+              name: "阶段低点",
+              coord: [categories[lowIndex], low],
+              value: low.toFixed(2),
+              itemStyle: { color: "#155e75" },
+              label: { formatter: "低点", color: "#151b2d" },
+            },
+            {
+              name: "当前",
+              coord: [categories[currentIndex], values[currentIndex]],
+              value: values[currentIndex].toFixed(2),
+              itemStyle: { color: "#1d4ed8" },
+              label: { formatter: "当前", color: "#151b2d" },
+            },
+          ],
+        };
+      }
+
+      function stockTrendSeries(item) {
+        const points = item.trend_points || [];
+        if (!points.length) return null;
+        const categories = points.map((point) => point.date);
+        const values = points.map((point) => Number(point.close));
+        const ma20 = points.map((point) => (point.ma20 == null ? null : Number(point.ma20)));
+        const ma60 = points.map((point) => (point.ma60 == null ? null : Number(point.ma60)));
+        const high = Math.max(...values);
+        const low = Math.min(...values);
+        const highIndex = values.indexOf(high);
+        const lowIndex = values.indexOf(low);
+        const currentIndex = values.length - 1;
+        return {
+          categories,
+          values,
+          ma20,
+          ma60,
+          source: points[currentIndex]?.source || item.symbol,
+          markPoints: [
+            {
+              name: "阶段高点",
+              coord: [categories[highIndex], high],
+              value: high.toFixed(2),
+              itemStyle: { color: "#c81e1e" },
+              label: { formatter: "高点", color: "#151b2d" },
+            },
+            {
+              name: "阶段低点",
+              coord: [categories[lowIndex], low],
+              value: low.toFixed(2),
+              itemStyle: { color: "#155e75" },
+              label: { formatter: "低点", color: "#151b2d" },
+            },
+            {
+              name: "当前",
+              coord: [categories[currentIndex], values[currentIndex]],
+              value: values[currentIndex].toFixed(2),
+              itemStyle: { color: "#1d4ed8" },
+              label: { formatter: "当前", color: "#151b2d" },
+            },
+          ],
+        };
+      }
+
+      function renderPriceTrend(instance, trend, priceName) {
+        instance.setOption({
+          animation: false,
+          grid: { left: 42, right: 16, top: 24, bottom: 28 },
+          tooltip: {
+            trigger: "axis",
+            formatter(params) {
+              const lines = [`${params[0]?.axisValue || ""} ${trend.source}`];
+              params.forEach((param) => {
+                if (param.value != null) lines.push(`${param.seriesName}：${Number(param.value).toFixed(2)}`);
+              });
+              return lines.join("<br />");
+            },
+          },
+          legend: { top: 0, right: 4, itemWidth: 14, itemHeight: 8, textStyle: { fontSize: 10 }, data: [priceName, "MA20", "MA60"] },
+          xAxis: {
+            type: "category",
+            data: trend.categories,
+            boundaryGap: false,
+            axisTick: { show: false },
+            axisLabel: { fontSize: 10, color: "#667085", hideOverlap: true },
+          },
+          yAxis: {
+            type: "value",
+            scale: true,
+            axisLabel: { fontSize: 10, color: "#667085" },
+            splitLine: { lineStyle: { color: "#edf0f5" } },
+          },
+          series: [
+            {
+              name: priceName,
+              type: "line",
+              data: trend.values,
+              smooth: true,
+              showSymbol: false,
+              lineStyle: { width: 2.2, color: "#1d4ed8" },
+              areaStyle: { color: "rgba(29,78,216,0.08)" },
+              markPoint: {
+                symbolSize: 46,
+                data: trend.markPoints,
+                label: { fontSize: 10 },
+              },
+            },
+            { name: "MA20", type: "line", data: trend.ma20, smooth: true, showSymbol: false, lineStyle: { width: 1.2, color: "#f59e0b" } },
+            { name: "MA60", type: "line", data: trend.ma60, smooth: true, showSymbol: false, lineStyle: { width: 1.2, color: "#64748b" } },
+          ],
+        });
+      }
+
+      function renderMiniTrend(id, item, type) {
+        if (!window.echarts) return;
+        const element = $(id);
+        if (!element) return;
+        const instance = echarts.init(element);
+        miniCharts.set(id, instance);
+        if (type === "sector") {
+          const trend = sectorTrendSeries(item);
+          if (trend) {
+            renderPriceTrend(instance, trend, "板块指数");
+            return;
+          }
+        }
+        if (type === "stock") {
+          const trend = stockTrendSeries(item);
+          if (trend) {
+            renderPriceTrend(instance, trend, "个股价格");
+            return;
+          }
+        }
+        const series = synthOpportunitySeries(item, type);
+        instance.setOption({
+          animation: false,
+          grid: { left: 34, right: 16, top: 20, bottom: 26 },
+          tooltip: {
+            trigger: "axis",
+            formatter(params) {
+              const point = params[0];
+              const lines = [`${point.axisValue} ${series.label}：${Number(point.value).toFixed(2)}`];
+              lines.push(`评分：${Number(item.score || 0).toFixed(3)}`);
+              lines.push(`涨跌幅：${formatPct(item.change_pct)}`);
+              if (type === "stock") lines.push(`量比：${compactText(item.volume_ratio == null ? null : Number(item.volume_ratio).toFixed(2))}`);
+              return lines.join("<br />");
+            },
+          },
+          xAxis: {
+            type: "category",
+            data: series.dates,
+            boundaryGap: false,
+            axisTick: { show: false },
+            axisLabel: { fontSize: 10, color: "#667085" },
+          },
+          yAxis: {
+            type: "value",
+            scale: true,
+            axisLabel: { fontSize: 10, color: "#667085" },
+            splitLine: { lineStyle: { color: "#edf0f5" } },
+          },
+          series: [
+            {
+              name: series.label,
+              type: "line",
+              data: series.values,
+              smooth: true,
+              showSymbol: false,
+              lineStyle: { width: 2.4, color: type === "sector" ? "#3346d3" : "#7c3aed" },
+              areaStyle: { color: type === "sector" ? "rgba(51,70,211,0.10)" : "rgba(124,58,237,0.10)" },
+              markPoint: {
+                symbolSize: 46,
+                data: series.markPoints,
+                label: { fontSize: 10 },
+              },
+              markLine: {
+                symbol: "none",
+                lineStyle: { color: "#98a2b3", type: "dashed", width: 1 },
+                label: { formatter: "当前评分", fontSize: 10 },
+                data: [{ yAxis: Number((50 + Number(item.score || 0) * 12).toFixed(2)) }],
+              },
+            },
+          ],
+        });
+      }
+
+      function renderOpportunityCharts(prefix, items, type) {
+        requestAnimationFrame(() => {
+          items.forEach((item, index) => renderMiniTrend(`${prefix}-${index}`, item, type));
+        });
       }
 
       function buildMockIndicators(points) {
@@ -871,6 +1510,7 @@
           validation_metrics: [],
           model_diagnostics: [],
           model_consensus: { consensus_probability: 0.5, disagreement_level: "离线演示", summary: "连接后端后展示模型共识。", details: [] },
+          fear_index: { score: 38.5, level: "中性偏谨慎", summary: "离线演示恐慌指数 38.5/100。", details: [] },
           history,
           future,
           indicators: buildMockIndicators([...history, ...future]),
@@ -1017,6 +1657,7 @@
           renderValidation(chart);
           renderMlDiagnostics(chart);
           renderConsensus(chart);
+          renderFearIndex(chart.fear_index);
         } catch (error) {
           if (provider === "offline") {
             const chart = mockChart(symbol);
@@ -1028,6 +1669,7 @@
             renderValidation(chart);
             renderMlDiagnostics(chart);
             renderConsensus(chart);
+            renderFearIndex(chart.fear_index);
             $("status").textContent = "未连接本地 API，已使用离线K线演示。";
           } else {
             $("status").textContent = `已连接本地 API，但 ${symbol} 数据获取失败。`;
@@ -1039,41 +1681,52 @@
 
       async function loadSectorOpportunities() {
         $("sectorSummary").textContent = "正在扫描行业板块，AKShare 实时行情可能需要 30-60 秒...";
+        disposeMiniCharts("sector-chart");
         try {
           const report = await fetchJson("/opportunities/sectors?limit=8");
           $("sectorSummary").textContent = `${report.summary} ${report.methodology || ""}`;
           if (!report.sectors.length) {
             $("sectors").innerHTML = `
-              <tr>
-                <td colspan="6" class="muted">没有返回板块结果。请确认已在当前虚拟环境安装 akshare，并重启本地 API。</td>
-              </tr>
+              <section class="compact-section" style="grid-column:1/-1">
+                <p class="muted">没有返回板块结果。请确认已在当前虚拟环境安装 akshare，并重启本地 API。</p>
+              </section>
             `;
             return;
           }
           $("sectors").innerHTML = report.sectors
             .map(
-              (item) => `
-                <tr>
-                  <td>${item.name}</td>
-                  <td>${item.rating || "-"}</td>
-                  <td>${Number(item.score).toFixed(3)}</td>
-                  <td>${item.change_pct == null ? "-" : `${Number(item.change_pct).toFixed(2)}%`}</td>
-                  <td>${item.leader || "-"}</td>
-                  <td>
-                    <div class="evidence-grid">
-                      <div class="evidence-line"><strong>实时快照：</strong>涨跌幅 ${item.change_pct == null ? "暂无" : `${Number(item.change_pct).toFixed(2)}%`}；换手率 ${item.turnover_rate == null ? "暂无" : `${Number(item.turnover_rate).toFixed(2)}%`}；领涨股 ${item.leader || "暂无"}</div>
-                      <div class="evidence-line"><strong>板块K线：</strong>${item.trend_summary || "暂无板块K线数据"}</div>
-                      <div class="evidence-line"><strong>成分扩散：</strong>${item.breadth_summary || "暂无成分股扩散数据"}</div>
-                      <div class="evidence-line"><strong>新闻情绪：</strong>${item.news_summary || "暂无新闻情绪数据"}</div>
-                      <div><strong>机会：</strong>${item.reasons.join("；")}</div>
-                      <div class="risk"><strong>风险：</strong>${item.risks.join("；")}</div>
-                      <div class="muted"><strong>观察：</strong>${item.watch_points.join("；")}</div>
+              (item, index) => `
+                <article class="opportunity-card">
+                  <div class="opportunity-head">
+                    <div>
+                      <div class="opportunity-title">
+                        <strong>${item.name}</strong>
+                        <span class="rating-pill">${item.rating || "观察"}</span>
+                      </div>
+                      <p class="muted" style="margin:6px 0 0">领涨股 ${item.leader || "暂无"}</p>
                     </div>
-                  </td>
-                </tr>
+                    <div class="opportunity-score">${Number(item.score).toFixed(3)}</div>
+                  </div>
+                  <div id="sector-chart-${index}" class="mini-chart"></div>
+                  <p class="muted" style="margin:6px 0 0">${(item.trend_points || []).length ? "图中展示真实板块/行业指数走势，并标注阶段高点、低点和当前点。" : "板块指数K线暂不可用，图中展示代理强度轨迹。"}</p>
+                  <div class="info-strip">
+                    <div class="info-chip"><span>实时涨跌幅</span><strong>${formatPct(item.change_pct)}</strong></div>
+                    <div class="info-chip"><span>换手率</span><strong>${formatPct(item.turnover_rate)}</strong></div>
+                    <div class="info-chip"><span>领涨强度</span><strong>${formatPct(item.leader_change_pct)}</strong></div>
+                  </div>
+                  <div class="opportunity-notes">
+                    <div class="evidence-line"><strong>板块K线：</strong>${item.trend_summary || "暂无板块K线数据"}</div>
+                    <div class="evidence-line"><strong>成分扩散：</strong>${item.breadth_summary || "暂无成分股扩散数据"}</div>
+                    <div class="evidence-line"><strong>新闻/资金：</strong>${item.news_summary || "暂无新闻或资金流数据"}</div>
+                    <div><strong>机会：</strong>${item.reasons.join("；") || "暂无"}</div>
+                    <div class="risk"><strong>风险：</strong>${item.risks.join("；") || "暂无"}</div>
+                    <div class="muted"><strong>观察：</strong>${item.watch_points.join("；") || "暂无"}</div>
+                  </div>
+                </article>
               `,
             )
             .join("");
+          renderOpportunityCharts("sector-chart", report.sectors, "sector");
         } catch (error) {
           $("sectorSummary").textContent = `板块扫描失败：${error.message}`;
         }
@@ -1081,6 +1734,7 @@
 
       async function loadStockOpportunities() {
         $("stockSummary").textContent = "正在扫描全A股候选，AKShare 全市场快照可能需要 30-60 秒...";
+        disposeMiniCharts("stock-chart");
         try {
           const report = await fetchJson("/opportunities/stocks/grouped?limit=60");
           $("stockSummary").textContent = `${report.summary} ${report.methodology || ""}`;
@@ -1092,57 +1746,85 @@
             `;
             return;
           }
+          const chartItems = [];
           $("stockGroups").innerHTML = report.groups
-            .map((group) => {
-              const rows = group.stocks
+            .map((group, groupIndex) => {
+              const cards = group.stocks
                 .map(
-                  (item) => `
-                    <tr>
-                      <td>${item.name} ${item.symbol}</td>
-                      <td>${item.rating || "-"}</td>
-                      <td>${Number(item.score).toFixed(3)}</td>
-                      <td>${item.change_pct == null ? "-" : `${Number(item.change_pct).toFixed(2)}%`}</td>
-                      <td>${item.volume_ratio == null ? "-" : Number(item.volume_ratio).toFixed(2)}</td>
-                      <td>
-                        <strong>机会：</strong>${item.reasons.join("；")}<br />
-                        <span class="muted"><strong>K线：</strong>${item.trend_summary || "暂无"}</span><br />
-                        <span class="muted"><strong>资金：</strong>${item.fund_flow_summary || "暂无"}</span><br />
-                        <span class="risk"><strong>风险：</strong>${item.risks.join("；")}</span><br />
-                        <span class="muted"><strong>观察：</strong>${item.watch_points.join("；")}</span>
-                      </td>
-                      <td><button style="width:72px;height:30px;margin:0" data-add="${item.symbol}">加入</button></td>
-                    </tr>
-                  `,
+                  (item, stockIndex) => {
+                    const chartId = `stock-chart-${groupIndex}-${stockIndex}`;
+                    chartItems.push({ id: chartId, item });
+                    return `
+                      <article class="stock-mini-card">
+                        <div class="opportunity-head">
+                          <div>
+                            <div class="opportunity-title">
+                              <strong>${item.name}</strong>
+                              <span class="rating-pill">${item.rating || "观察"}</span>
+                            </div>
+                            <p class="muted" style="margin:6px 0 0">${item.symbol}</p>
+                          </div>
+                          <div class="opportunity-score">${Number(item.score).toFixed(3)}</div>
+                        </div>
+                        <div id="${chartId}" class="mini-chart"></div>
+                        <p class="muted" style="margin:6px 0 0">${(item.trend_points || []).length ? "图中展示真实个股历史走势，并标注阶段高点、低点和当前点。" : "个股历史K线暂不可用，图中展示代理强度轨迹。"}</p>
+                        <div class="info-strip">
+                          <div class="info-chip"><span>涨跌幅</span><strong>${formatPct(item.change_pct)}</strong></div>
+                          <div class="info-chip"><span>量比</span><strong>${compactText(item.volume_ratio == null ? null : Number(item.volume_ratio).toFixed(2))}</strong></div>
+                          <div class="info-chip"><span>成交额</span><strong>${item.amount == null ? "暂无" : `${(Number(item.amount) / 100000000).toFixed(2)}亿`}</strong></div>
+                        </div>
+                        <div class="opportunity-notes">
+                          <div><strong>机会：</strong>${item.reasons.join("；") || "暂无"}</div>
+                          <div class="muted"><strong>K线：</strong>${item.trend_summary || "暂无"}</div>
+                          <div class="muted"><strong>资金：</strong>${item.fund_flow_summary || "暂无"}</div>
+                          <div class="risk"><strong>风险：</strong>${item.risks.join("；") || "暂无"}</div>
+                          <div class="muted"><strong>观察：</strong>${item.watch_points.join("；") || "暂无"}</div>
+                        </div>
+                        <div class="stock-card-actions">
+                          <button data-add="${item.symbol}">加入池</button>
+                          <button data-chart="${item.symbol}" type="button">看K线</button>
+                        </div>
+                      </article>
+                    `;
+                  },
                 )
                 .join("");
               return `
-                <section class="compact-section" style="margin-top:12px">
+                <section class="stock-group-card">
                   <strong>${group.sector}</strong>
                   <p class="muted">板块评分 ${Number(group.sector_score).toFixed(3)} · ${group.sector_reasons.join("；")}</p>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>股票</th><th>评级</th><th>评分</th><th>涨跌幅</th><th>量比</th><th>机会逻辑 / 风险 / 观察点</th><th>操作</th>
-                      </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                  </table>
+                  <div class="stock-card-grid">${cards}</div>
                 </section>
               `;
             })
             .join("");
+          requestAnimationFrame(() => {
+            chartItems.forEach(({ id, item }) => renderMiniTrend(id, item, "stock"));
+          });
           $("stockGroups").querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", () => {
-              const symbol = button.dataset.add;
+              const symbol = button.dataset.add || button.dataset.chart;
+              if (button.dataset.chart) {
+                const meta = report.groups.flatMap((group) => group.stocks).find((item) => item.symbol === symbol);
+                if (meta && !universe.some((item) => item.symbol === symbol)) {
+                  universe.push({ symbol, name: meta.name, alias: "", kind: "stock" });
+                }
+                renderChartOptions();
+                $("chartSymbol").value = symbol;
+                $("analysisSymbol").value = symbol;
+                loadChart(symbol);
+                return;
+              }
               if (!pool.includes(symbol)) {
                 pool.push(symbol);
-                const rowText = button.closest("tr").children[0].textContent.trim();
-                const name = rowText.replace(symbol, "").trim();
+                const title = button.closest(".stock-mini-card").querySelector(".opportunity-title strong");
+                const name = title ? title.textContent.trim() : symbol;
                 if (!universe.some((item) => item.symbol === symbol)) {
                   universe.push({ symbol, name, alias: "", kind: "stock" });
                 }
                 renderPool();
                 renderChartOptions();
+                $("analysisSymbol").value = symbol;
               }
             });
           });
@@ -1163,26 +1845,47 @@
         }
       });
       $("searchBtn").addEventListener("click", () => searchSymbols($("search").value));
-      $("sectorBtn").addEventListener("click", loadSectorOpportunities);
-      $("stockBtn").addEventListener("click", loadStockOpportunities);
+      $("sectorBtn").addEventListener("click", () => {
+        activateTab("opportunities");
+        loadSectorOpportunities();
+      });
+      $("stockBtn").addEventListener("click", () => {
+        activateTab("opportunities");
+        loadStockOpportunities();
+      });
+      document.querySelectorAll(".tab-button").forEach((button) => {
+        button.addEventListener("click", () => activateTab(button.dataset.tab));
+      });
       $("benchmark").addEventListener("change", renderChartOptions);
-      $("chartBtn").addEventListener("click", () => loadChart());
+      $("analysisSymbol").addEventListener("change", () => {
+        const symbol = $("analysisSymbol").value;
+        if (symbol) {
+          $("chartSymbol").value = symbol;
+        }
+      });
+      $("chartBtn").addEventListener("click", () => {
+        activateTab("kline");
+        loadChart();
+      });
       $("chartMode").addEventListener("change", () => loadChart());
       $("modelMode").addEventListener("change", () => loadChart());
       $("run").addEventListener("click", async () => {
+        activateTab("overview");
         const benchmark = encodeURIComponent($("benchmark").value);
-        const symbols = encodeURIComponent(pool.join(","));
-        $("status").textContent = "正在运行 Agent 分析...";
+        const selectedSymbol = $("analysisSymbol").value || pool[0];
+        const symbols = encodeURIComponent(selectedSymbol);
+        $("status").textContent = `正在运行 ${nameOf(selectedSymbol)} ${selectedSymbol} 的 Agent 分析...`;
         try {
           const report = await fetchJson(`/agents/research?benchmark=${benchmark}&symbols=${symbols}`);
           renderReport(report);
-          $("status").textContent = "已连接本地 API，Agent 分析完成。";
+          $("status").textContent = `已连接本地 API，${nameOf(selectedSymbol)} Agent 分析完成。`;
         } catch (error) {
           renderReport(fallbackReport);
           $("status").textContent = "未连接本地 API，已切换到离线演示。";
         }
         renderChartOptions();
-        await loadChart();
+        $("chartSymbol").value = selectedSymbol;
+        await loadChart(selectedSymbol);
       });
 
       fillSelects();

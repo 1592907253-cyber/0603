@@ -20,6 +20,13 @@ class ExplanationItem(BaseModel):
     detail: str
 
 
+class FearIndexSnapshot(BaseModel):
+    score: float = Field(ge=0.0, le=100.0)
+    level: str
+    summary: str
+    details: list[str]
+
+
 class MarketForecast(BaseModel):
     symbol: str
     regime: MarketRegime
@@ -27,6 +34,7 @@ class MarketForecast(BaseModel):
     forecasts: list[ForecastHorizon]
     explanations: list[ExplanationItem]
     risks: list[str]
+    fear_index: FearIndexSnapshot | None = None
 
 
 class StockForecast(BaseModel):
@@ -137,6 +145,7 @@ class PredictionChart(BaseModel):
     model_diagnostics: list[ModelDiagnostic]
     model_consensus: ModelConsensus
     selected_model_mode: str
+    fear_index: FearIndexSnapshot | None = None
     history: list[KlinePoint]
     future: list[KlinePoint]
     indicators: list[IndicatorPoint]
@@ -150,6 +159,22 @@ class SymbolInfo(BaseModel):
     kind: Literal["index", "stock"]
 
 
+class SectorTrendPoint(BaseModel):
+    date: str
+    close: float
+    ma20: float | None = None
+    ma60: float | None = None
+    source: str = "real"
+
+
+class StockTrendPoint(BaseModel):
+    date: str
+    close: float
+    ma20: float | None = None
+    ma60: float | None = None
+    source: str = "real"
+
+
 class SectorOpportunity(BaseModel):
     name: str
     score: float
@@ -159,6 +184,7 @@ class SectorOpportunity(BaseModel):
     leader: str | None = None
     leader_change_pct: float | None = None
     trend_summary: str | None = None
+    trend_points: list[SectorTrendPoint] = Field(default_factory=list)
     breadth_summary: str | None = None
     news_summary: str | None = None
     signal_breakdown: list[FactorContribution]
@@ -184,6 +210,7 @@ class StockOpportunity(BaseModel):
     turnover_rate: float | None = None
     amount: float | None = None
     trend_summary: str | None = None
+    trend_points: list[StockTrendPoint] = Field(default_factory=list)
     fund_flow_summary: str | None = None
     signal_breakdown: list[FactorContribution]
     reasons: list[str]

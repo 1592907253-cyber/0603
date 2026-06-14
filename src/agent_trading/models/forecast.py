@@ -8,12 +8,14 @@ from agent_trading.agents.sentiment import SentimentAgent, SentimentResult
 from agent_trading.features.technical import add_technical_features
 from agent_trading.models.analog import HistoricalAnalogForecaster
 from agent_trading.models.deep_learning import GRUSequencePredictor
+from agent_trading.models.fear import FearIndex, FearIndexModel
 from agent_trading.models.ml import MLDirectionPredictor
 from agent_trading.models.signal_engine import MultiFactorSignalEngine
 from agent_trading.schemas import (
     AnalysisSection,
     FactorContribution,
     ExplanationItem,
+    FearIndexSnapshot,
     ForecastHorizon,
     IndicatorPoint,
     KlinePoint,
@@ -59,6 +61,7 @@ class HeuristicForecastModel:
         self.analog_forecaster = HistoricalAnalogForecaster()
         self.ml_predictor = MLDirectionPredictor(horizon_days=5)
         self.deep_predictor = GRUSequencePredictor(horizon_days=5)
+        self.fear_model = FearIndexModel()
 
     def market_forecast(
         self,
@@ -70,14 +73,16 @@ class HeuristicForecastModel:
         latest = features.iloc[-1]
         signal = self.signal_engine.market_score(history, sentiment)
         analogs = self.analog_forecaster.forecast(history, self.config.horizons)
+        fear = self.fear_model.calculate(history)
+        fear_penalty = max((fear.score - 45) / 100, 0.0)
 
         trend = float(latest["ma_gap_5_20"])
         momentum = float(latest["ret_20d"])
         volatility = float(latest["volatility_20"])
 
-        if volatility > 0.025:
+        if volatility > 0.025 or fear.score >= 70:
             regime = "high_volatility"
-            position = 0.3
+            position = 0.25
         elif signal.score > 0.22:
             regime = "bull"
             position = min(max(0.55 + signal.score * 0.35, 0.55), 0.8)
@@ -87,12 +92,13 @@ class HeuristicForecastModel:
         else:
             regime = "neutral"
             position = 0.5
+        position = min(max(position - fear_penalty * 0.35, 0.1), 0.85)
 
         forecasts = [
             self._horizon_forecast(
                 horizon,
-                momentum=momentum + signal.score * 0.06,
-                volatility=volatility,
+                momentum=momentum + signal.score * 0.06 - fear_penalty * 0.04,
+                volatility=volatility + fear_penalty * 0.01,
                 trend=trend,
                 analog=analogs.get(horizon),
             )
@@ -114,12 +120,19 @@ class HeuristicForecastModel:
                 impact="negative" if volatility > 0.02 else "neutral",
                 detail=f"20-day volatility is {volatility:.2%}.",
             ),
+            ExplanationItem(
+                factor="fear_index",
+                impact="negative" if fear.score >= 55 else "neutral",
+                detail=f"{fear.summary} {'；'.join(fear.details[:2])}",
+            ),
         ]
         risks = []
         if volatility > 0.02:
             risks.append("Market volatility is elevated; reduce position sizing.")
         if momentum < 0:
             risks.append("Medium-term momentum is weak.")
+        if fear.score >= 55:
+            risks.append(f"{fear.summary} 建议降低追涨权重并收紧止损。")
 
         return MarketForecast(
             symbol=symbol,
@@ -128,6 +141,7 @@ class HeuristicForecastModel:
             forecasts=forecasts,
             explanations=explanations,
             risks=risks or ["No major baseline risk detected."],
+            fear_index=self._fear_snapshot(fear),
         )
 
     def stock_forecast(
@@ -147,6 +161,8 @@ class HeuristicForecastModel:
         volume_ratio = float(latest["volume_ratio_5_20"])
 
         benchmark_momentum = 0.0
+        fear = self.fear_model.calculate(benchmark_history if benchmark_history is not None else history)
+        fear_penalty = max((fear.score - 45) / 100, 0.0)
         if benchmark_history is not None:
             benchmark_features = add_technical_features(benchmark_history)
             benchmark_momentum = float(benchmark_features.iloc[-1]["ret_20d"])
@@ -158,7 +174,10 @@ class HeuristicForecastModel:
             max(0.5 + signal.score * 0.32 + excess_signal * 0.9 + (analog_probability - 0.5) * 0.35, 0.05),
             0.95,
         )
-        drawdown_risk = min(max(abs(drawdown) * 4 + max(0.0, 0.9 - volume_ratio) * 0.2, 0.05), 0.95)
+        drawdown_risk = min(
+            max(abs(drawdown) * 4 + max(0.0, 0.9 - volume_ratio) * 0.2 + fear_penalty * 0.35, 0.05),
+            0.95,
+        )
 
         if outperform_probability > 0.62 and drawdown_risk < 0.45:
             action = "buy"
@@ -193,12 +212,19 @@ class HeuristicForecastModel:
                 impact="positive" if volume_ratio > 1 else "neutral",
                 detail=f"5/20 day volume ratio is {volume_ratio:.2f}.",
             ),
+            ExplanationItem(
+                factor="market_fear",
+                impact="negative" if fear.score >= 55 else "neutral",
+                detail=f"{fear.summary} 市场恐慌上行时，个股突破信号需要更强量能确认。",
+            ),
         ]
         risks = []
         if drawdown < -0.08:
             risks.append("Recent drawdown is deep; wait for stabilization.")
         if volume_ratio < 0.8:
             risks.append("Liquidity is weakening compared with the 20-day baseline.")
+        if fear.score >= 55:
+            risks.append(f"{fear.summary} 个股策略应降低仓位并等待市场风险释放。")
 
         return StockForecast(
             symbol=symbol,
@@ -227,6 +253,11 @@ class HeuristicForecastModel:
             self.market_forecast(symbol, history, sentiment)
             if is_index
             else self.stock_forecast(symbol, history, benchmark_history, sentiment)
+        )
+        fear_snapshot = (
+            forecast.fear_index
+            if isinstance(forecast, MarketForecast)
+            else self._fear_snapshot(self.fear_model.calculate(benchmark_history if benchmark_history is not None else history))
         )
         validation_metrics = self._validation_metrics(history)
         model_diagnostics = self._model_diagnostics(history)
@@ -277,6 +308,7 @@ class HeuristicForecastModel:
             model_diagnostics=model_diagnostics,
             model_consensus=model_consensus,
             selected_model_mode=model_mode,
+            fear_index=fear_snapshot,
             history=self._to_kline_points(history_tail, predicted=False),
             future=future,
             indicators=indicators,
@@ -317,6 +349,14 @@ class HeuristicForecastModel:
             direction=direction,
             expected_return=expected_return,
             confidence=confidence,
+        )
+
+    def _fear_snapshot(self, fear: FearIndex) -> FearIndexSnapshot:
+        return FearIndexSnapshot(
+            score=fear.score,
+            level=fear.level,
+            summary=fear.summary,
+            details=fear.details,
         )
 
     def _project_future_klines(
@@ -974,6 +1014,7 @@ class HeuristicForecastModel:
         volume_ratio = float(latest["volume_ratio_5_20"])
         drawdown = float(latest["drawdown_20"])
         main = forecast.forecasts[1] if len(forecast.forecasts) > 1 else forecast.forecasts[0]
+        fear = forecast.fear_index
         return [
             AnalysisSection(
                 title="趋势结构",
@@ -998,6 +1039,16 @@ class HeuristicForecastModel:
                     f"20日波动率为{volatility:.2%}，20日区间回撤为{drawdown:.2%}。",
                     f"当前仓位建议为{forecast.suggested_position:.0%}，用于匹配市场风险状态。",
                 ],
+            ),
+            AnalysisSection(
+                title="恐慌指数",
+                conclusion=(fear.summary if fear else "恐慌指数暂不可用。"),
+                details=(
+                    [
+                        "该指标参考VIX的风险温度计思想，但在A股场景中使用实现波动率、回撤、下跌日占比、跳空和放量等可获得数据代理。",
+                        *(fear.details if fear else []),
+                    ]
+                ),
             ),
             AnalysisSection(
                 title="策略含义",

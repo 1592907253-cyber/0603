@@ -10,8 +10,10 @@ from agent_trading.schemas import (
     FactorContribution,
     SectorOpportunity,
     SectorOpportunityReport,
+    SectorTrendPoint,
     SectorStockGroup,
     SectorStockOpportunityReport,
+    StockTrendPoint,
     StockOpportunity,
     StockOpportunityReport,
 )
@@ -31,6 +33,22 @@ HOT_SECTOR_KEYWORDS = (
     "新能源",
     "汽车",
 )
+
+SECTOR_SOURCE_ALIASES = {
+    "通信": ("通信设备", "通信服务"),
+    "算力": ("通信设备", "计算机设备", "软件开发", "IT服务"),
+    "半导体": ("半导体", "元件", "消费电子"),
+    "芯片": ("半导体", "元件"),
+    "人工智能": ("软件开发", "IT服务", "计算机设备"),
+    "机器人": ("自动化设备", "通用设备", "专用设备"),
+    "证券": ("证券",),
+    "有色金属": ("工业金属", "小金属", "贵金属", "能源金属"),
+    "有色": ("工业金属", "小金属", "贵金属", "能源金属"),
+    "稀土": ("小金属",),
+    "新能源": ("电池", "光伏设备", "风电设备", "能源金属"),
+    "汽车": ("汽车整车", "汽车零部件", "乘用车"),
+    "银行": ("银行",),
+}
 
 
 def _number(value: object) -> float | None:
@@ -100,6 +118,7 @@ def _rating(score: float) -> str:
 class OpportunityAgent:
     provider_name: str = "mock"
     _fund_flow_snapshot: pd.DataFrame | None = None
+    _industry_flow_snapshot: pd.DataFrame | None = None
 
     def sector_opportunities(self, limit: int = 8) -> SectorOpportunityReport:
         if self.provider_name.lower() != "akshare":
@@ -123,10 +142,29 @@ class OpportunityAgent:
         sectors = [self._fast_enrich_sector(item) for item in sectors[: max(limit, 12)]]
         sectors = self._ensure_hot_sector_visibility(sectors)
         sectors.sort(key=lambda item: item.score, reverse=True)
+        sectors = [
+            self._attach_sector_trend_points(item) if index < min(limit, 8) else item
+            for index, item in enumerate(sectors)
+        ]
         return SectorOpportunityReport(
             summary="基于板块动量、交易活跃度、龙头锚点、龙头强度、主题热度和过热风险筛选潜力板块。",
             methodology="评分不是单看涨幅，而是同时考察资金是否参与、龙头是否明确、强度是否扩散，以及是否已经过热。",
             sectors=sectors[:limit],
+        )
+
+    def _attach_sector_trend_points(self, sector: SectorOpportunity) -> SectorOpportunity:
+        if sector.trend_points:
+            return sector
+        _, trend_summary, trend_points, trend_reasons, trend_risks = self._sector_trend_analysis(sector.name)
+        if not trend_points:
+            return sector
+        return sector.model_copy(
+            update={
+                "trend_summary": trend_summary,
+                "trend_points": trend_points,
+                "reasons": [*sector.reasons, *trend_reasons],
+                "risks": [*sector.risks, *trend_risks],
+            }
         )
 
     def stock_opportunities(self, limit: int = 30) -> StockOpportunityReport:
@@ -148,11 +186,12 @@ class OpportunityAgent:
             if stock is not None:
                 stocks.append(stock)
         stocks.sort(key=lambda item: item.score, reverse=True)
-        candidates = stocks[: max(limit, 30)]
-        deep_count = min(limit, 5)
+        candidates = [self._fast_enrich_stock(stock) for stock in stocks[: max(limit, 30)]]
+        candidates.sort(key=lambda item: item.score, reverse=True)
+        deep_symbols = {stock.symbol for stock in candidates[: min(limit, 8)]}
         stocks = [
-            self._enrich_stock(stock) if index < deep_count else self._fast_enrich_stock(stock)
-            for index, stock in enumerate(candidates)
+            self._enrich_stock(stock) if stock.symbol in deep_symbols else stock
+            for stock in candidates
         ]
         stocks.sort(key=lambda item: item.score, reverse=True)
         return StockOpportunityReport(
@@ -222,9 +261,15 @@ class OpportunityAgent:
             avg_change = self._average([item.change_pct for item in top])
             avg_turnover = self._average([item.turnover_rate for item in top])
             leader = top[0]
+            trend_summary, trend_points, trend_reasons, trend_risks = self._sector_trend_from_ths_alias(sector)
+            flow_summary, flow_score, flow_reasons, flow_risks = self._sector_flow_from_ths_alias(sector)
+            if flow_score is not None:
+                avg_score += flow_score * 0.12
             reasons = [
-                f"行业板块接口不可用，改用全A实时行情中 {len(stocks)} 只同主题股票聚合判断。",
+                f"东方财富行业板块主接口不可用，改用全A实时行情中 {len(stocks)} 只同主题股票聚合判断。",
                 f"组内高分代表为 {leader.name}，当前评分 {leader.score:.3f}。",
+                *trend_reasons,
+                *flow_reasons,
             ]
             if avg_change is not None:
                 reasons.append(f"组内候选平均涨跌幅约 {avg_change:.2f}%。")
@@ -237,17 +282,20 @@ class OpportunityAgent:
                     turnover_rate=avg_turnover,
                     leader=leader.name,
                     leader_change_pct=leader.change_pct,
-                    trend_summary="兜底聚合：板块指数K线暂不可用，使用同主题候选股实时表现代理趋势。",
+                    trend_summary=trend_summary,
+                    trend_points=trend_points,
                     breadth_summary=f"兜底聚合：全A实时行情中识别到 {len(stocks)} 只同主题股票。",
-                    news_summary="兜底聚合：新闻情绪未阻塞主扫描，建议结合新闻面二次确认。",
+                    news_summary=flow_summary,
                     signal_breakdown=[
                         self._factor("同主题个股强度", avg_score, 0.5, "用同主题候选股平均评分代理板块强度。"),
                         self._factor("龙头带动", leader.score, 0.3, f"组内代表股票为 {leader.name}。"),
+                        self._factor("行业资金流", flow_score or 0.0, 0.12, flow_summary),
                     ],
                     reasons=reasons,
                     risks=[
-                        "这是板块接口失败后的真实行情兜底聚合，不等同于完整行业指数扫描。",
-                        "仍需结合板块指数、新闻和成分股扩散做进一步确认。",
+                        *trend_risks,
+                        *flow_risks,
+                        "这是东方财富板块接口失败后的多源兜底结果，仍需结合后续行情继续确认。",
                     ],
                     watch_points=[
                         "观察同主题候选股是否继续集体上榜。",
@@ -257,10 +305,88 @@ class OpportunityAgent:
             )
         sectors.sort(key=lambda item: item.score, reverse=True)
         return SectorOpportunityReport(
-            summary="行业板块接口暂不可用，已改用全A实时行情按主题聚合生成板块机会。",
-            methodology="先扫描真实全A实时行情，再按股票名称和主题关键词聚合为板块方向；该结果用于保证扫描可用，并标注为兜底聚合。",
+            summary="东方财富行业板块接口暂不可用，已改用全A实时行情、同花顺行业指数和行业资金流生成板块机会。",
+            methodology="先扫描真实全A实时行情，再按主题聚合；若可匹配同花顺行业名，则补充行业指数K线和行业资金流。",
             sectors=sectors[:limit],
         )
+
+    def _sector_aliases(self, sector: str) -> tuple[str, ...]:
+        aliases = {sector}
+        for key, values in SECTOR_SOURCE_ALIASES.items():
+            if key in sector or sector in key:
+                aliases.update(values)
+        return tuple(aliases)
+
+    def _sector_trend_from_ths_alias(self, sector: str) -> tuple[str, list[SectorTrendPoint], list[str], list[str]]:
+        try:
+            import akshare as ak
+
+            end = date.today().strftime("%Y%m%d")
+            start = (date.today() - timedelta(days=520)).strftime("%Y%m%d")
+            errors: list[str] = []
+            for alias in self._sector_aliases(sector):
+                try:
+                    with akshare_network_context():
+                        frame = ak.stock_board_industry_index_ths(symbol=alias, start_date=start, end_date=end)
+                    if frame is None or frame.empty:
+                        continue
+                    data = frame.rename(columns={"收盘价": "close", "成交量": "volume"})
+                    close = pd.to_numeric(data["close"], errors="coerce").dropna()
+                    volume = pd.to_numeric(data["volume"], errors="coerce").dropna()
+                    if len(close) < 30:
+                        continue
+                    ma20 = close.rolling(20).mean().iloc[-1]
+                    ret20 = close.iloc[-1] / close.iloc[-20] - 1
+                    vol_ratio = volume.tail(5).mean() / volume.tail(20).mean() if len(volume) >= 20 else 1.0
+                    summary = f"同花顺行业指数K线({alias})：20日收益 {ret20:.2%}，价格相对MA20 {'偏强' if close.iloc[-1] > ma20 else '偏弱'}，量能比 {vol_ratio:.2f}。"
+                    points = self._sector_trend_points(data, source=alias)
+                    reasons = [summary] if close.iloc[-1] > ma20 or ret20 > 0 else []
+                    risks = [] if reasons else [summary]
+                    return summary, points, reasons, risks
+                except Exception as exc:
+                    errors.append(f"{alias}: {exc}")
+            return (
+                "板块指数K线：同花顺行业指数未匹配成功，使用同主题候选股实时表现代理趋势。",
+                [],
+                [],
+                ["未能匹配到可用同花顺行业指数K线。"],
+            )
+        except Exception as exc:
+            return f"板块指数K线暂不可用：{exc}", [], [], ["未能拉取板块指数K线。"]
+
+    def _sector_flow_from_ths_alias(self, sector: str) -> tuple[str, float | None, list[str], list[str]]:
+        try:
+            import akshare as ak
+
+            if self._industry_flow_snapshot is None:
+                with akshare_network_context():
+                    self._industry_flow_snapshot = ak.stock_fund_flow_industry(symbol="即时")
+            frame = self._industry_flow_snapshot
+            industry_col = self._find_column(frame, ("行业", "板块", "名称"))
+            net_col = self._find_column(frame, ("净额", "主力净额"))
+            change_col = self._find_column(frame, ("行业-涨跌幅", "涨跌幅"))
+            leader_col = self._find_column(frame, ("领涨股",))
+            if industry_col is None or net_col is None:
+                return "行业资金流：同花顺资金流字段不完整。", None, [], ["行业资金流字段不完整。"]
+            aliases = self._sector_aliases(sector)
+            data = frame.copy()
+            matched = data[data[industry_col].astype(str).apply(lambda value: any(alias in value or value in alias for alias in aliases))]
+            if matched.empty:
+                return "行业资金流：未匹配到同花顺行业资金流，建议结合新闻和成分股二次确认。", None, [], []
+            row = matched.iloc[0]
+            net = _number(row.get(net_col))
+            change = _number(row.get(change_col)) if change_col else None
+            leader = str(row.get(leader_col)) if leader_col else "暂无"
+            score = _bounded_score((net or 0) / 40)
+            summary = f"同花顺行业资金流({row[industry_col]})：净额 {net:.2f}亿元" if net is not None else f"同花顺行业资金流({row[industry_col]})：净额暂无"
+            if change is not None:
+                summary += f"，行业涨跌幅 {change:.2f}%"
+            summary += f"，领涨股 {leader}。"
+            reasons = [summary] if net is not None and net > 0 else []
+            risks = [summary] if net is not None and net < 0 else []
+            return summary, score, reasons, risks
+        except Exception as exc:
+            return f"行业资金流暂不可用：{exc}", None, [], ["未能拉取同花顺行业资金流。"]
 
     def _load_sector_frame(self, errors: list[str]) -> pd.DataFrame | None:
         try:
@@ -399,7 +525,7 @@ class OpportunityAgent:
         )
 
     def _enrich_sector(self, sector: SectorOpportunity) -> SectorOpportunity:
-        trend_score, trend_summary, trend_reasons, trend_risks = self._sector_trend_analysis(sector.name)
+        trend_score, trend_summary, trend_points, trend_reasons, trend_risks = self._sector_trend_analysis(sector.name)
         breadth_score, breadth_summary, breadth_reasons, breadth_risks = self._sector_breadth_analysis(sector.name)
         news_score, news_summary, news_reasons, news_risks = self._sector_news_analysis(sector.name)
         score = sector.score + trend_score * 0.24 + breadth_score * 0.18 + news_score * 0.12
@@ -414,6 +540,7 @@ class OpportunityAgent:
                 "score": round(score, 4),
                 "rating": _rating(score),
                 "trend_summary": trend_summary,
+                "trend_points": trend_points,
                 "breadth_summary": breadth_summary,
                 "news_summary": news_summary,
                 "signal_breakdown": signal_breakdown,
@@ -445,7 +572,7 @@ class OpportunityAgent:
             }
         )
 
-    def _sector_trend_analysis(self, sector_name: str) -> tuple[float, str, list[str], list[str]]:
+    def _sector_trend_analysis(self, sector_name: str) -> tuple[float, str, list[SectorTrendPoint], list[str], list[str]]:
         errors: list[str] = []
         try:
             import akshare as ak
@@ -486,12 +613,37 @@ class OpportunityAgent:
                             score += 0.1
                             reasons.append(f"板块近5日量能相对20日放大 {vol_ratio:.2f} 倍。")
                         summary = f"板块K线：20日收益 {ret20:.2%}，价格相对MA20 {'偏强' if close.iloc[-1] > ma20 else '偏弱'}，量能比 {vol_ratio:.2f}。"
-                        return _bounded_score(score), summary, reasons, risks
+                        points = self._sector_trend_points(data, source=sector_name)
+                        return _bounded_score(score), summary, points, reasons, risks
                 except Exception as exc:
                     errors.append(f"{function_name}失败：{exc}")
         except Exception as exc:
             errors.append(f"导入AKShare失败：{exc}")
-        return 0.0, "板块K线数据暂不可用：" + "；".join(errors[:2]), [], ["未能拉取板块历史K线，趋势确认缺失。"]
+        return 0.0, "板块K线数据暂不可用：" + "；".join(errors[:2]), [], [], ["未能拉取板块历史K线，趋势确认缺失。"]
+
+    def _sector_trend_points(self, frame: pd.DataFrame, source: str) -> list[SectorTrendPoint]:
+        date_col = self._find_column(frame, ("日期", "date", "时间"))
+        close_col = self._find_column(frame, ("close", "收盘", "收盘价"))
+        if date_col is None or close_col is None:
+            return []
+        data = frame[[date_col, close_col]].copy()
+        data[date_col] = pd.to_datetime(data[date_col], errors="coerce")
+        data[close_col] = pd.to_numeric(data[close_col], errors="coerce")
+        data = data.dropna(subset=[date_col, close_col]).sort_values(date_col).tail(120)
+        if data.empty:
+            return []
+        data["ma20"] = data[close_col].rolling(20).mean()
+        data["ma60"] = data[close_col].rolling(60).mean()
+        return [
+            SectorTrendPoint(
+                date=row[date_col].strftime("%Y-%m-%d"),
+                close=round(float(row[close_col]), 4),
+                ma20=None if pd.isna(row["ma20"]) else round(float(row["ma20"]), 4),
+                ma60=None if pd.isna(row["ma60"]) else round(float(row["ma60"]), 4),
+                source=source,
+            )
+            for _, row in data.iterrows()
+        ]
 
     def _sector_breadth_analysis(self, sector_name: str) -> tuple[float, str, list[str], list[str]]:
         errors: list[str] = []
@@ -641,7 +793,7 @@ class OpportunityAgent:
         )
 
     def _enrich_stock(self, stock: StockOpportunity) -> StockOpportunity:
-        trend_score, trend_summary, trend_reasons, trend_risks = self._stock_trend_analysis(stock)
+        trend_score, trend_summary, trend_points, trend_reasons, trend_risks = self._stock_trend_analysis(stock)
         flow_score, flow_summary, flow_reasons, flow_risks = self._fund_flow_analysis(stock)
         sector_score = 0.08 if stock.sector and stock.sector != "其他" else 0.0
         score = stock.score + trend_score * 0.22 + flow_score * 0.2 + sector_score
@@ -657,6 +809,7 @@ class OpportunityAgent:
                 "score": round(score, 4),
                 "rating": _rating(score),
                 "trend_summary": trend_summary,
+                "trend_points": trend_points,
                 "fund_flow_summary": flow_summary,
                 "signal_breakdown": signal_breakdown,
                 "reasons": reasons,
@@ -686,7 +839,7 @@ class OpportunityAgent:
             }
         )
 
-    def _stock_trend_analysis(self, stock: StockOpportunity) -> tuple[float, str, list[str], list[str]]:
+    def _stock_trend_analysis(self, stock: StockOpportunity) -> tuple[float, str, list[StockTrendPoint], list[str], list[str]]:
         try:
             end = date.today()
             start = end - timedelta(days=260)
@@ -717,13 +870,38 @@ class OpportunityAgent:
                 score += 0.12
                 reasons.append(f"近5日量能相对20日放大 {vol_ratio:.2f} 倍。")
             summary = f"K线趋势：收盘价相对MA20 {'偏强' if close.iloc[-1] > ma20 else '偏弱'}，20日收益 {ret20:.2%}，量能比 {vol_ratio:.2f}。"
-            return _bounded_score(score), summary, reasons, risks
-        except Exception:
-            return self._proxy_trend_analysis(stock)
+            points = self._stock_trend_points(data, source=stock.symbol)
+            return _bounded_score(score), summary, points, reasons, risks
+        except Exception as exc:
+            score, summary, reasons, risks = self._proxy_trend_analysis(stock)
+            summary += f" 上游原因：{self._short_error(exc)}"
+            risks = [*risks, "未能拉取单股历史K线，趋势确认降级为实时行情代理。"]
+            return score, summary, [], reasons, risks
+
+    def _stock_trend_points(self, frame: pd.DataFrame, source: str) -> list[StockTrendPoint]:
+        if frame.empty or "close" not in frame.columns:
+            return []
+        data = frame[["close"]].copy()
+        data["close"] = pd.to_numeric(data["close"], errors="coerce")
+        data = data.dropna(subset=["close"]).sort_index().tail(120)
+        if data.empty:
+            return []
+        data["ma20"] = data["close"].rolling(20).mean()
+        data["ma60"] = data["close"].rolling(60).mean()
+        return [
+            StockTrendPoint(
+                date=index.strftime("%Y-%m-%d"),
+                close=round(float(row["close"]), 4),
+                ma20=None if pd.isna(row["ma20"]) else round(float(row["ma20"]), 4),
+                ma60=None if pd.isna(row["ma60"]) else round(float(row["ma60"]), 4),
+                source=source,
+            )
+            for index, row in data.iterrows()
+        ]
 
     def _fund_flow_analysis(self, stock: StockOpportunity) -> tuple[float, str, list[str], list[str]]:
         code = stock.symbol.split(".")[0]
-        ths_result = self._fund_flow_from_ths_snapshot(code)
+        ths_result = self._fund_flow_from_ths_snapshot(code, stock.name)
         if ths_result is not None:
             return ths_result
         try:
@@ -755,10 +933,13 @@ class OpportunityAgent:
                     score += _bounded_score(float(pct) / 10) * 0.3
             summary = "资金流：已纳入近5日主力资金净流入方向和净占比变化。"
             return _bounded_score(score), summary, reasons, risks
-        except Exception:
-            return self._proxy_fund_flow_analysis(stock)
+        except Exception as exc:
+            score, summary, reasons, risks = self._proxy_fund_flow_analysis(stock)
+            summary += f" 上游原因：{self._short_error(exc)}"
+            risks = [*risks, "未能拉取单股主力资金流，资金确认降级为成交额、量比和换手率代理。"]
+            return score, summary, reasons, risks
 
-    def _fund_flow_from_ths_snapshot(self, code: str) -> tuple[float, str, list[str], list[str]] | None:
+    def _fund_flow_from_ths_snapshot(self, code: str, stock_name: str | None = None) -> tuple[float, str, list[str], list[str]] | None:
         try:
             import akshare as ak
 
@@ -773,8 +954,14 @@ class OpportunityAgent:
             if code_col is None or net_col is None:
                 return None
             data = frame.copy()
-            data[code_col] = data[code_col].astype(str).str.extract(r"(\d{6})", expand=False)
-            matched = data[data[code_col] == code]
+            data[code_col] = self._normalize_stock_codes(data[code_col])
+            matched = data[data[code_col] == code.zfill(6)]
+            if matched.empty and stock_name and name_col is not None:
+                names = data[name_col].astype(str).str.strip()
+                target_name = stock_name.strip()
+                matched = data[names == target_name]
+                if matched.empty:
+                    matched = data[names.str.contains(target_name, regex=False, na=False)]
             if matched.empty:
                 return None
             row = matched.iloc[0]
@@ -900,6 +1087,16 @@ class OpportunityAgent:
         if abs(value) >= 10_000:
             return f"{value / 10_000:.2f}万元"
         return f"{value:.2f}元"
+
+    def _normalize_stock_codes(self, values: pd.Series) -> pd.Series:
+        codes = values.astype(str).str.extract(r"(\d{1,6})", expand=False)
+        return codes.where(codes.isna(), codes.str.zfill(6))
+
+    def _short_error(self, exc: Exception) -> str:
+        text = str(exc).replace("\n", " ").strip()
+        if not text:
+            return exc.__class__.__name__
+        return text[:120] + ("..." if len(text) > 120 else "")
 
     def _ensure_hot_sector_visibility(self, sectors: list[SectorOpportunity]) -> list[SectorOpportunity]:
         existing = {sector.name for sector in sectors}

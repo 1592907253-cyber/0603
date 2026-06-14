@@ -4,6 +4,7 @@ import pandas as pd
 
 from agent_trading.agents.sentiment import SentimentResult
 from agent_trading.features.technical import add_technical_features
+from agent_trading.models.fear import FearIndexModel
 from agent_trading.schemas import FactorContribution
 
 
@@ -28,9 +29,13 @@ def impact_from_score(score: float) -> str:
 class MultiFactorSignalEngine:
     """Transparent multi-factor score engine inspired by common quant practice."""
 
+    def __init__(self) -> None:
+        self.fear_model = FearIndexModel()
+
     def market_score(self, history: pd.DataFrame, sentiment: SentimentResult | None = None) -> SignalScore:
         features = add_technical_features(history)
         latest = features.iloc[-1]
+        fear = self.fear_model.calculate(history)
         ret_20d = float(latest["ret_20d"])
         ret_5d = float(latest["ret_5d"])
         ma_gap = float(latest["ma_gap_5_20"])
@@ -50,6 +55,7 @@ class MultiFactorSignalEngine:
             self._factor("波动惩罚", -(volatility - 0.015) / 0.02, 0.16, f"20日波动率 {volatility:.2%}，高波动会降低预测可信度。"),
             self._factor("量能确认", (volume_ratio - 1) / 0.45, 0.12, f"5/20日量能比 {volume_ratio:.2f}，放量支持趋势延续。"),
             self._factor("回撤惩罚", drawdown / 0.12, 0.1, f"20日回撤 {drawdown:.2%}，回撤越深越偏防守。"),
+            self._factor("恐慌指数", -(fear.score - 35) / 40, 0.12, f"{fear.summary} 恐慌上行时降低仓位和趋势置信度。"),
             self._factor("新闻情绪", sentiment_score, 0.08, sentiment.summary if sentiment else "未接入新闻情绪，按中性处理。"),
         ]
         return SignalScore(score=sum(item.weight * self._signed_value(item.value) for item in raw), contributions=raw)
