@@ -44,6 +44,12 @@ def test_prediction_chart_contains_history_and_future() -> None:
     assert result.strategy_description
     assert result.factor_contributions
     assert result.indicators
+    assert result.trade_signals is not None
+    for signal in result.trade_signals:
+        assert signal.action in {"buy", "sell"}
+        assert 0 <= signal.strength <= 1
+        assert signal.reason
     assert result.validation_metrics
     assert result.model_diagnostics
+    assert result.model_consensus
     assert result.selected_model_mode

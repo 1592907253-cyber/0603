@@ -13,3 +13,10 @@ def test_mock_stock_opportunities() -> None:
 
     assert report.stocks
     assert report.summary
+
+
+def test_grouped_stock_opportunities() -> None:
+    report = OpportunityAgent("mock").grouped_stock_opportunities(limit=2)
+
+    assert report.groups
+    assert report.summary

@@ -73,6 +73,15 @@ class IndicatorPoint(BaseModel):
     ma250: float | None = None
 
 
+class TradeSignalPoint(BaseModel):
+    date: str
+    action: Literal["buy", "sell"]
+    price: float
+    strength: float = Field(ge=0.0, le=1.0)
+    reason: str
+    predicted: bool = False
+
+
 class AnalysisSection(BaseModel):
     title: str
     conclusion: str
@@ -102,6 +111,13 @@ class ModelDiagnostic(BaseModel):
     top_features: list[FactorContribution]
 
 
+class ModelConsensus(BaseModel):
+    consensus_probability: float
+    disagreement_level: str
+    summary: str
+    details: list[str]
+
+
 class PredictionModelMode(BaseModel):
     mode: str
     description: str
@@ -119,10 +135,12 @@ class PredictionChart(BaseModel):
     factor_contributions: list[FactorContribution]
     validation_metrics: list[ValidationMetric]
     model_diagnostics: list[ModelDiagnostic]
+    model_consensus: ModelConsensus
     selected_model_mode: str
     history: list[KlinePoint]
     future: list[KlinePoint]
     indicators: list[IndicatorPoint]
+    trade_signals: list[TradeSignalPoint] = Field(default_factory=list)
     explanations: list[ExplanationItem]
 
 
@@ -140,6 +158,9 @@ class SectorOpportunity(BaseModel):
     turnover_rate: float | None = None
     leader: str | None = None
     leader_change_pct: float | None = None
+    trend_summary: str | None = None
+    breadth_summary: str | None = None
+    news_summary: str | None = None
     signal_breakdown: list[FactorContribution]
     reasons: list[str]
     risks: list[str]
@@ -157,10 +178,13 @@ class StockOpportunity(BaseModel):
     name: str
     score: float
     rating: str
+    sector: str | None = None
     change_pct: float | None = None
     volume_ratio: float | None = None
     turnover_rate: float | None = None
     amount: float | None = None
+    trend_summary: str | None = None
+    fund_flow_summary: str | None = None
     signal_breakdown: list[FactorContribution]
     reasons: list[str]
     risks: list[str]
@@ -171,6 +195,19 @@ class StockOpportunityReport(BaseModel):
     summary: str
     methodology: str
     stocks: list[StockOpportunity]
+
+
+class SectorStockGroup(BaseModel):
+    sector: str
+    sector_score: float
+    sector_reasons: list[str]
+    stocks: list[StockOpportunity]
+
+
+class SectorStockOpportunityReport(BaseModel):
+    summary: str
+    methodology: str
+    groups: list[SectorStockGroup]
 
 
 class QlibStatus(BaseModel):

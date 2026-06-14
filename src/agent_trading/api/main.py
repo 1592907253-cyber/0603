@@ -15,6 +15,7 @@ from agent_trading.schemas import (
     QlibTrainingRequest,
     QlibTrainingResponse,
     SectorOpportunityReport,
+    SectorStockOpportunityReport,
     StockOpportunityReport,
 )
 from agent_trading.settings import get_settings
@@ -28,6 +29,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_private_network_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
 
 
 @app.get("/health")
@@ -72,6 +80,15 @@ def stock_opportunities(limit: int = Query(30, ge=1, le=100)) -> StockOpportunit
         return OpportunityAgent(settings.data_provider).stock_opportunities(limit=limit)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"全A股机会扫描失败：{exc}") from exc
+
+
+@app.get("/opportunities/stocks/grouped", response_model=SectorStockOpportunityReport)
+def grouped_stock_opportunities(limit: int = Query(60, ge=1, le=200)) -> SectorStockOpportunityReport:
+    try:
+        settings = get_settings()
+        return OpportunityAgent(settings.data_provider).grouped_stock_opportunities(limit=limit)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"按板块分组扫描失败：{exc}") from exc
 
 
 @app.get("/forecast/market/{symbol}", response_model=MarketForecast)

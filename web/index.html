@@ -8,16 +8,20 @@
     <style>
       :root {
         color-scheme: light;
-        --bg: #f5f6f8;
+        --bg: #f3f5fa;
         --panel: #ffffff;
-        --text: #17202a;
+        --soft: #f8faff;
+        --text: #151b2d;
         --muted: #667085;
-        --line: #d8dee8;
-        --accent: #0f766e;
+        --line: #d7deea;
+        --primary: #3346d3;
+        --primary-2: #7c3aed;
         --red: #d92d20;
-        --green: #079455;
         --blue: #2563eb;
-        --warn: #b45309;
+        --purple: #7c3aed;
+        --warn: #b54708;
+        --down: #1f5f8b;
+        --shadow: 0 14px 34px rgba(21, 27, 45, 0.08);
       }
 
       * {
@@ -26,32 +30,52 @@
 
       body {
         margin: 0;
-        background: var(--bg);
         color: var(--text);
+        background: var(--bg);
         font-family:
-          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Microsoft YaHei", sans-serif;
       }
 
       header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 16px;
-        border-bottom: 1px solid var(--line);
-        background: var(--panel);
-        padding: 14px 22px;
+        gap: 18px;
+        padding: 16px 22px;
+        color: #fff;
+        background: linear-gradient(135deg, #111827 0%, #1d2b6f 54%, #5b21b6 100%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
       }
 
       h1 {
-        margin: 0;
-        font-size: 21px;
+        margin-bottom: 4px;
+        font-size: 22px;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+
+      h3 {
+        margin-bottom: 8px;
+        font-size: 15px;
       }
 
       main {
         display: grid;
-        grid-template-columns: 340px minmax(0, 1fr);
-        gap: 14px;
-        padding: 14px;
+        grid-template-columns: 360px minmax(0, 1fr);
+        gap: 16px;
+        padding: 16px;
       }
 
       section {
@@ -59,61 +83,140 @@
         border: 1px solid var(--line);
         border-radius: 8px;
         padding: 14px;
+        box-shadow: var(--shadow);
       }
 
       label {
         display: block;
+        margin: 12px 0 6px;
         color: var(--muted);
         font-size: 13px;
-        margin: 12px 0 6px;
       }
 
       input,
       select {
         width: 100%;
-        height: 38px;
+        height: 40px;
         border: 1px solid var(--line);
         border-radius: 6px;
         padding: 0 10px;
-        font-size: 14px;
+        color: var(--text);
         background: #fff;
+        font-size: 14px;
       }
 
       button {
-        height: 38px;
+        width: 100%;
+        height: 40px;
         border: 0;
         border-radius: 6px;
-        background: var(--accent);
         color: #fff;
+        background: linear-gradient(135deg, var(--primary), var(--primary-2));
         cursor: pointer;
         font-weight: 700;
+      }
+
+      table {
         width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 9px 8px;
+        text-align: left;
+        vertical-align: top;
+        font-size: 13px;
+      }
+
+      th {
+        color: var(--muted);
+        background: var(--soft);
+        font-weight: 700;
+      }
+
+      .subtitle {
+        color: #dbe4ff;
+        font-size: 13px;
+      }
+
+      .status-pill {
+        max-width: 420px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 999px;
+        padding: 7px 12px;
+        color: #eef2ff;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 13px;
+      }
+
+      .sidebar,
+      .workspace {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .panel-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .risk {
+        color: var(--warn);
+      }
+
+      .evidence-grid {
+        display: grid;
+        gap: 6px;
+      }
+
+      .evidence-line {
+        padding: 7px 8px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #f8fafc;
+        color: #475467;
+        line-height: 1.45;
+      }
+
+      .evidence-line strong {
+        color: #182230;
       }
 
       .search-list {
-        max-height: 170px;
+        max-height: 190px;
         overflow: auto;
+        margin-top: 8px;
         border: 1px solid var(--line);
         border-radius: 6px;
-        margin-top: 8px;
       }
 
       .search-item {
         display: flex;
         justify-content: space-between;
         gap: 8px;
-        padding: 9px 10px;
+        padding: 10px;
         border-bottom: 1px solid var(--line);
         cursor: pointer;
         font-size: 14px;
       }
 
-      .search-item:last-child {
-        border-bottom: 0;
+      .search-item:hover {
+        background: #eef2ff;
       }
 
-      .search-item:hover {
-        background: #eef8f6;
+      .search-item:last-child {
+        border-bottom: 0;
       }
 
       .pool {
@@ -130,19 +233,18 @@
         border: 1px solid var(--line);
         border-radius: 999px;
         padding: 5px 9px;
-        background: #fafafa;
+        background: #f3f6ff;
         font-size: 13px;
       }
 
       .tag button {
         width: 18px;
         height: 18px;
-        margin: 0;
         border-radius: 50%;
-        background: #e5e7eb;
-        color: #475467;
-        line-height: 18px;
         padding: 0;
+        color: #475467;
+        background: #e5e7eb;
+        line-height: 18px;
       }
 
       .metric-grid {
@@ -155,12 +257,13 @@
         border: 1px solid var(--line);
         border-radius: 8px;
         padding: 12px;
+        background: var(--soft);
       }
 
       .metric strong {
         display: block;
-        font-size: 23px;
         margin-top: 6px;
+        font-size: 23px;
       }
 
       .toolbar {
@@ -168,42 +271,15 @@
         grid-template-columns: 1fr 1fr 160px 120px;
         gap: 10px;
         align-items: end;
-        margin: 14px 0;
+        margin-bottom: 12px;
       }
 
       #kline {
         width: 100%;
-        height: 460px;
+        height: 540px;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: #fff;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 8px;
-      }
-
-      th,
-      td {
-        border-bottom: 1px solid var(--line);
-        padding: 9px 8px;
-        text-align: left;
-        font-size: 14px;
-      }
-
-      th {
-        color: var(--muted);
-        font-weight: 650;
-      }
-
-      .muted {
-        color: var(--muted);
-      }
-
-      .risk {
-        color: var(--warn);
       }
 
       .report {
@@ -213,10 +289,12 @@
         margin-top: 12px;
       }
 
-      .report div {
+      .report div,
+      .section-card {
         border: 1px solid var(--line);
         border-radius: 8px;
         padding: 12px;
+        background: #fff;
       }
 
       .sections {
@@ -224,17 +302,6 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
         margin-top: 12px;
-      }
-
-      .section-card {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 12px;
-      }
-
-      .section-card h3 {
-        margin: 0 0 8px;
-        font-size: 15px;
       }
 
       .section-card ul {
@@ -265,7 +332,7 @@
       }
 
       .impact-negative {
-        color: var(--green);
+        color: var(--down);
         font-weight: 700;
       }
 
@@ -280,7 +347,11 @@
         margin-top: 0;
       }
 
-      @media (max-width: 920px) {
+      .compact-section {
+        box-shadow: none;
+      }
+
+      @media (max-width: 980px) {
         main,
         .report,
         .sections {
@@ -297,170 +368,190 @@
   <body>
     <header>
       <div>
-        <h1>AgentTrading A股走势预测工作台</h1>
-        <div class="muted">第40组 yes茄豆 · 大盘预测 · 个股预测 · 中文投研分析</div>
+        <h1>AgentTrading A股智能投研终端</h1>
+        <div class="subtitle">第40组 yes茄豆 · 大盘预测 · 个股预测 · 板块机会 · 多模型诊断</div>
       </div>
-      <div class="muted" id="status">离线演示已就绪</div>
+      <div class="status-pill" id="status">离线演示已就绪</div>
     </header>
 
     <main>
-      <section>
-        <label for="api">API 地址</label>
-        <input id="api" value="http://127.0.0.1:8000" />
-
-        <label for="search">搜索A股个股或指数</label>
-        <div style="display: grid; grid-template-columns: 1fr 76px; gap: 8px">
-          <input id="search" placeholder="输入代码或名称，如 洛阳钼业 / 603993 / 宁德时代" />
-          <button id="searchBtn" type="button" style="margin-top: 0">搜索</button>
-        </div>
-        <p id="searchStatus" class="muted">输入股票名称或代码后点击搜索。</p>
-        <div id="searchList" class="search-list"></div>
-
-        <label>股票池</label>
-        <div id="pool" class="pool"></div>
-
-        <label for="benchmark">基准指数</label>
-        <select id="benchmark"></select>
-
-        <button id="run" style="margin-top: 14px">运行 Agent 分析</button>
-        <div class="mini-actions">
-          <button id="sectorBtn" type="button">扫描潜力板块</button>
-          <button id="stockBtn" type="button">扫描全A股</button>
-        </div>
-      </section>
-
-      <section>
-        <div class="metric-grid">
-          <div class="metric">
-            <span class="muted">市场状态</span>
-            <strong id="regime">-</strong>
-          </div>
-          <div class="metric">
-            <span class="muted">建议仓位</span>
-            <strong id="position">-</strong>
-          </div>
-          <div class="metric">
-            <span class="muted">候选数量</span>
-            <strong id="count">-</strong>
-          </div>
-        </div>
-
-        <div class="toolbar">
-          <div>
-            <label for="chartSymbol">走势预测标的</label>
-            <select id="chartSymbol"></select>
-          </div>
-          <div>
-            <label for="chartMode">图表内容</label>
-            <select id="chartMode">
-              <option value="both">历史 + 未来预测K线</option>
-              <option value="future">仅未来预测K线</option>
-              <option value="history">仅历史K线</option>
-            </select>
-          </div>
-          <div>
-            <label for="modelMode">预测模型</label>
-            <select id="modelMode">
-              <option value="ensemble">综合模型</option>
-              <option value="factor">多因子模型</option>
-              <option value="ml">机器学习模型</option>
-              <option value="deep">深度学习GRU</option>
-            </select>
-          </div>
-          <button id="chartBtn">生成K线图</button>
-        </div>
-
-        <div id="kline"></div>
-
-        <div class="report">
-          <div>
-            <strong>中文走势分析</strong>
-            <p id="analysis" class="muted">等待生成。</p>
-          </div>
-          <div>
-            <strong>风险复核</strong>
-            <p id="risk" class="risk">等待生成。</p>
-          </div>
-        </div>
-
-        <div id="sections" class="sections"></div>
-
-        <h2 style="font-size: 18px; margin-top: 18px">多因子预测策略与具体原因</h2>
-        <section style="padding: 12px; margin: 0">
-          <strong>当前预测策略</strong>
-          <p id="strategy" class="muted">等待生成。</p>
-          <p class="muted">
-            当前模型综合趋势、相对强弱、均线结构、MA20支撑、量能、波动、回撤和新闻情绪等信号。因子分数为标准化后的方向性评分，
-            不是收益率本身。
-          </p>
+      <aside class="sidebar">
+        <section>
+          <div class="panel-title"><h2>数据连接</h2></div>
+          <label for="api">API 地址</label>
+          <input id="api" value="http://127.0.0.1:8000" />
         </section>
-        <div class="factor-table">
+
+        <section>
+          <div class="panel-title"><h2>股票搜索</h2></div>
+          <label for="search">搜索A股个股或指数</label>
+          <div style="display: grid; grid-template-columns: 1fr 76px; gap: 8px">
+            <input id="search" placeholder="输入代码或名称，如 洛阳钼业 / 603993 / 宁德时代" />
+            <button id="searchBtn" type="button" style="margin-top: 0">搜索</button>
+          </div>
+          <p id="searchStatus" class="muted">输入股票名称或代码后点击搜索。</p>
+          <div id="searchList" class="search-list"></div>
+
+          <label>股票池</label>
+          <div id="pool" class="pool"></div>
+        </section>
+
+        <section>
+          <div class="panel-title"><h2>分析控制台</h2></div>
+          <label for="benchmark">基准指数</label>
+          <select id="benchmark"></select>
+
+          <button id="run" style="margin-top: 14px">运行 Agent 分析</button>
+          <div class="mini-actions">
+            <button id="sectorBtn" type="button">扫描潜力板块</button>
+            <button id="stockBtn" type="button">扫描全A股</button>
+          </div>
+        </section>
+      </aside>
+
+      <div class="workspace">
+        <section>
+          <div class="panel-title"><h2>市场概览</h2></div>
+          <div class="metric-grid">
+            <div class="metric">
+              <span class="muted">市场状态</span>
+              <strong id="regime">-</strong>
+            </div>
+            <div class="metric">
+              <span class="muted">建议仓位</span>
+              <strong id="position">-</strong>
+            </div>
+            <div class="metric">
+              <span class="muted">候选数量</span>
+              <strong id="count">-</strong>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="panel-title"><h2>K线预测</h2></div>
+          <div class="toolbar">
+            <div>
+              <label for="chartSymbol">走势预测标的</label>
+              <select id="chartSymbol"></select>
+            </div>
+            <div>
+              <label for="chartMode">图表内容</label>
+              <select id="chartMode">
+                <option value="both">历史 + 未来预测K线</option>
+                <option value="future">仅未来预测K线</option>
+                <option value="history">仅历史K线</option>
+              </select>
+            </div>
+            <div>
+              <label for="modelMode">预测模型</label>
+              <select id="modelMode">
+                <option value="ensemble">综合模型</option>
+                <option value="factor">多因子模型</option>
+                <option value="ml">机器学习模型</option>
+                <option value="deep">深度学习GRU</option>
+              </select>
+            </div>
+            <button id="chartBtn">生成K线图</button>
+          </div>
+
+          <div id="kline"></div>
+
+          <div class="report">
+            <div>
+              <strong>中文走势分析</strong>
+              <p id="analysis" class="muted">等待生成。</p>
+            </div>
+            <div>
+              <strong>风险复核</strong>
+              <p id="risk" class="risk">等待生成。</p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="panel-title"><h2>预测解释</h2></div>
+          <div id="sections" class="sections"></div>
+
+          <h2 style="font-size: 18px; margin-top: 18px">多因子预测策略与具体原因</h2>
+          <section class="compact-section" style="padding: 12px; margin: 0">
+            <strong>当前预测策略</strong>
+            <p id="strategy" class="muted">等待生成。</p>
+            <p class="muted">
+              当前模型综合趋势、相对强弱、均线结构、MA20支撑、量能、波动、回撤和新闻情绪等信号。
+              因子分数为标准化后的方向性评分，不是收益率本身。
+            </p>
+          </section>
+          <div class="factor-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>因子</th>
+                  <th>因子分数</th>
+                  <th>影响</th>
+                  <th>权重</th>
+                  <th>原因</th>
+                </tr>
+              </thead>
+              <tbody id="factors"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section>
+          <div class="panel-title"><h2>模型诊断</h2></div>
+          <h2 style="font-size: 18px">历史相似行情校准</h2>
+          <div id="validation" class="sections"></div>
+
+          <h2 style="font-size: 18px; margin-top: 18px">机器学习模型诊断</h2>
+          <div id="mlDiagnostics" class="sections"></div>
+
+          <h2 style="font-size: 18px; margin-top: 18px">模型共识与分歧</h2>
+          <section class="compact-section" style="padding: 12px; margin: 0">
+            <strong id="consensusTitle">等待生成。</strong>
+            <p id="consensusSummary" class="muted"></p>
+            <ul id="consensusDetails" class="muted"></ul>
+          </section>
+        </section>
+
+        <section>
+          <div class="panel-title"><h2>板块与全A股机会</h2></div>
+          <h2 style="font-size: 18px">潜力板块</h2>
+          <p id="sectorSummary" class="muted">等待扫描。</p>
           <table>
             <thead>
               <tr>
-                <th>因子</th>
-                <th>因子分数</th>
-                <th>影响</th>
-                <th>权重</th>
+                <th>板块</th>
+                <th>评级</th>
+                <th>评分</th>
+                <th>涨跌幅</th>
+                <th>领涨股</th>
+                <th>机会逻辑 / 风险 / 观察点</th>
+              </tr>
+            </thead>
+            <tbody id="sectors"></tbody>
+          </table>
+
+          <h2 style="font-size: 18px; margin-top: 18px">全A股潜力候选</h2>
+          <p id="stockSummary" class="muted">等待扫描。</p>
+          <div id="stockGroups"></div>
+        </section>
+
+        <section>
+          <div class="panel-title"><h2>候选股票</h2></div>
+          <table>
+            <thead>
+              <tr>
+                <th>代码</th>
+                <th>动作</th>
+                <th>评分</th>
                 <th>原因</th>
               </tr>
             </thead>
-            <tbody id="factors"></tbody>
+            <tbody id="candidates"></tbody>
           </table>
-        </div>
-
-        <h2 style="font-size: 18px; margin-top: 18px">历史相似行情校准</h2>
-        <div id="validation" class="sections"></div>
-
-        <h2 style="font-size: 18px; margin-top: 18px">机器学习模型诊断</h2>
-        <div id="mlDiagnostics" class="sections"></div>
-
-        <h2 style="font-size: 18px; margin-top: 18px">潜力板块</h2>
-        <p id="sectorSummary" class="muted">等待扫描。</p>
-        <table>
-          <thead>
-            <tr>
-              <th>板块</th>
-              <th>评级</th>
-              <th>评分</th>
-              <th>涨跌幅</th>
-              <th>领涨股</th>
-              <th>机会逻辑 / 风险 / 观察点</th>
-            </tr>
-          </thead>
-          <tbody id="sectors"></tbody>
-        </table>
-
-        <h2 style="font-size: 18px; margin-top: 18px">全A股潜力候选</h2>
-        <p id="stockSummary" class="muted">等待扫描。</p>
-        <table>
-          <thead>
-            <tr>
-              <th>股票</th>
-              <th>评级</th>
-              <th>评分</th>
-              <th>涨跌幅</th>
-              <th>量比</th>
-              <th>机会逻辑 / 风险 / 观察点</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="stockOpportunities"></tbody>
-        </table>
-
-        <h2 style="font-size: 18px; margin-top: 18px">候选股票</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>代码</th>
-              <th>动作</th>
-              <th>评分</th>
-              <th>原因</th>
-            </tr>
-          </thead>
-          <tbody id="candidates"></tbody>
-        </table>
-      </section>
+        </section>
+      </div>
     </main>
 
     <script>
@@ -473,6 +564,7 @@
         { symbol: "600519.SH", name: "贵州茅台", alias: "gzmt maotai mt", kind: "stock" },
         { symbol: "000001.SZ", name: "平安银行", alias: "payh pingan", kind: "stock" },
         { symbol: "300750.SZ", name: "宁德时代", alias: "ndsd catl", kind: "stock" },
+        { symbol: "603993.SH", name: "洛阳钼业", alias: "lymy", kind: "stock" },
         { symbol: "601318.SH", name: "中国平安", alias: "zgpa pingan", kind: "stock" },
         { symbol: "600036.SH", name: "招商银行", alias: "zsyh cmb", kind: "stock" },
         { symbol: "600030.SH", name: "中信证券", alias: "zxzq citic", kind: "stock" },
@@ -530,6 +622,34 @@
         });
       }
 
+      async function fetchJson(path) {
+        const api = $("api").value.replace(/\/$/, "");
+        const response = await fetch(`${api}${path}`);
+        if (!response.ok) {
+          let message = `API ${response.status}`;
+          try {
+            const body = await response.json();
+            message = body.detail || message;
+          } catch (error) {
+            message = `API ${response.status}`;
+          }
+          throw new Error(message);
+        }
+        return response.json();
+      }
+
+      async function updateBackendStatus() {
+        try {
+          const health = await fetchJson("/health");
+          const source = health.data_provider === "akshare" ? "AKShare真实行情" : "Mock模拟行情";
+          $("status").textContent = `已连接本地 API，当前数据源：${source}`;
+          return health.data_provider;
+        } catch (error) {
+          $("status").textContent = "未连接本地 API，当前为离线演示模式。";
+          return "offline";
+        }
+      }
+
       async function searchSymbols(query) {
         const value = query.trim().toLowerCase();
         $("searchStatus").textContent = value ? `正在搜索：${query.trim()}...` : "显示常用指数和样例股票。";
@@ -540,7 +660,6 @@
           }
         } catch (error) {
           $("searchStatus").textContent = `后端搜索失败：${error.message}。正在使用本地兜底股票表。`;
-          items = [];
         }
         if (!items.length) {
           items = value
@@ -574,17 +693,9 @@
             const meta =
               items.find((entry) => entry.symbol === symbol) ||
               universe.find((entry) => entry.symbol === symbol);
-            if (!meta) {
-              $("status").textContent = `未找到 ${symbol} 的标的信息。`;
-              return;
-            }
+            if (!meta) return;
             if (!universe.some((entry) => entry.symbol === meta.symbol)) {
-              universe.push({
-                symbol: meta.symbol,
-                name: meta.name,
-                alias: "",
-                kind: meta.kind,
-              });
+              universe.push({ symbol: meta.symbol, name: meta.name, alias: "", kind: meta.kind });
             }
             if (meta.kind === "index") {
               $("benchmark").value = symbol;
@@ -594,7 +705,6 @@
             $("search").value = "";
             searchSymbols("");
             renderPool();
-            renderChartOptions();
             renderChartOptions();
             $("chartSymbol").value = symbol;
             $("status").textContent = `已选择 ${meta.name} ${symbol}，正在生成趋势图和预测...`;
@@ -635,274 +745,6 @@
             `,
           )
           .join("");
-      }
-
-      async function fetchJson(path) {
-        const api = $("api").value.replace(/\/$/, "");
-        const response = await fetch(`${api}${path}`);
-        if (!response.ok) {
-          let message = `API ${response.status}`;
-          try {
-            const body = await response.json();
-            message = body.detail || message;
-          } catch (error) {
-            message = `API ${response.status}`;
-          }
-          throw new Error(message);
-        }
-        return response.json();
-      }
-
-      async function updateBackendStatus() {
-        try {
-          const health = await fetchJson("/health");
-          const source = health.data_provider === "akshare" ? "AKShare真实行情" : "Mock模拟行情";
-          $("status").textContent = `已连接本地 API，当前数据源：${source}`;
-          return health.data_provider;
-        } catch (error) {
-          $("status").textContent = "未连接本地 API，当前为离线演示模式。";
-          return "offline";
-        }
-      }
-
-      function mockChart(symbol) {
-        const base = symbol.startsWith("600519") ? 1700 : symbol.startsWith("300750") ? 210 : 100;
-        const history = [];
-        const future = [];
-        let close = base;
-        for (let index = 60; index > 0; index -= 1) {
-          close *= 1 + Math.sin(index / 5) * 0.003 + (Math.random() - 0.5) * 0.012;
-          history.push(makeBar(index, close, false));
-        }
-        for (let index = 1; index <= 12; index += 1) {
-          close *= 1 + 0.002 + (Math.random() - 0.5) * 0.014;
-          future.push(makeBar(index, close, true));
-        }
-        return {
-          symbol,
-          name: nameOf(symbol),
-          analysis: `${nameOf(symbol)}离线预测：未来短期走势偏震荡上行，建议结合成交量和大盘状态确认。`,
-          risk_summary: "离线风险提示：当前结果为演示数据，真实运行请启动本地 API。",
-          analysis_sections: [
-            {
-              title: "趋势结构",
-              conclusion: "短线趋势偏震荡上行。",
-              details: ["价格维持在中短期均线附近。", "预测区间仅用于演示真实功能形态。"],
-            },
-            {
-              title: "风险控制",
-              conclusion: "建议等待真实数据确认。",
-              details: ["离线模式不包含真实成交额、资金流和公告风险。", "启动 API 后将返回后端分析。"],
-            },
-          ],
-          strategy_description:
-            "离线演示采用简化启发式策略：结合趋势、量能、波动和回撤生成走势路径。真实运行时后端会返回具体因子数值。",
-          factor_contributions: [
-            {
-              name: "趋势偏离",
-              value: "演示值",
-              impact: "positive",
-              weight: 0.3,
-              explanation: "价格保持在中短期趋势上方，支持偏强判断。",
-            },
-            {
-              name: "回撤风险",
-              value: "演示值",
-              impact: "neutral",
-              weight: 0.2,
-              explanation: "离线模式不使用真实行情，仅展示解释结构。",
-            },
-          ],
-          validation_metrics: [
-            {
-              name: "历史校准",
-              value: "离线演示",
-              detail: "启动本地 API 并启用 AKShare 后，将使用真实历史数据寻找相似行情窗口。",
-            },
-          ],
-          model_diagnostics: [
-            {
-              model_name: "离线演示",
-              probability_up: 0.5,
-              train_samples: 0,
-              test_accuracy: null,
-              test_auc: null,
-              top_features: [],
-            },
-          ],
-          history,
-          future,
-          indicators: buildMockIndicators([...history, ...future]),
-        };
-      }
-
-      function buildMockIndicators(points) {
-        return points.map((item, index) => {
-          const avg = (windowSize) => {
-            if (index + 1 < windowSize) return null;
-            const slice = points.slice(index + 1 - windowSize, index + 1);
-            return slice.reduce((sum, point) => sum + point.close, 0) / windowSize;
-          };
-          return {
-            date: item.date,
-            ma5: avg(5),
-            ma10: avg(10),
-            ma20: avg(20),
-            ma60: avg(60),
-            ma120: avg(120),
-            ma250: avg(250),
-          };
-        });
-      }
-
-      function makeBar(index, close, predicted) {
-        const open = close * (1 + (Math.random() - 0.5) * 0.008);
-        return {
-          date: predicted ? `预测${index}` : `T-${index}`,
-          open,
-          high: Math.max(open, close) * 1.01,
-          low: Math.min(open, close) * 0.99,
-          close,
-          volume: 1,
-          predicted,
-        };
-      }
-
-      function drawKline(chart) {
-        const mode = $("chartMode").value;
-        const points = [
-          ...(mode !== "future" ? chart.history : []),
-          ...(mode !== "history" ? chart.future : []),
-        ];
-        if (!points.length) return;
-        if (!window.echarts) {
-          $("status").textContent = "ECharts 未加载，请确认浏览器可以访问 CDN。";
-          return;
-        }
-        if (!chartInstance) {
-          chartInstance = echarts.init($("kline"));
-          window.addEventListener("resize", () => chartInstance.resize());
-        }
-        const categories = points.map((item) => item.date);
-        const data = points.map((item) => [item.open, item.close, item.low, item.high]);
-        const indicatorByDate = new Map((chart.indicators || []).map((item) => [item.date, item]));
-        const maSeries = (key) =>
-          categories.map((date) => {
-            const value = indicatorByDate.get(date)?.[key];
-            return value == null ? null : Number(value).toFixed(2);
-          });
-        const splitIndex = points.findIndex((item) => item.predicted);
-        const markLineData = splitIndex > 0 ? [{ xAxis: categories[splitIndex], name: "预测开始" }] : [];
-        chartInstance.setOption({
-          animation: false,
-          title: {
-            text: `${chart.name} ${chart.symbol} 未来走势K线预测`,
-            left: 12,
-            top: 8,
-            textStyle: { fontSize: 15 },
-          },
-          tooltip: {
-            trigger: "axis",
-            axisPointer: { type: "cross" },
-            formatter(params) {
-              const item = params[0];
-              const value = item.data;
-              return [
-                item.axisValue,
-                `开盘：${Number(value[1]).toFixed(2)}`,
-                `收盘：${Number(value[2]).toFixed(2)}`,
-                `最低：${Number(value[3]).toFixed(2)}`,
-                `最高：${Number(value[4]).toFixed(2)}`,
-              ].join("<br />");
-            },
-          },
-          grid: { left: 58, right: 24, top: 54, bottom: 64 },
-          dataZoom: [
-            { type: "inside", start: 0, end: 100 },
-            { type: "slider", height: 22, bottom: 22, start: 0, end: 100 },
-          ],
-          xAxis: { type: "category", data: categories, boundaryGap: true, axisLine: { onZero: false } },
-          yAxis: { scale: true, splitLine: { lineStyle: { color: "#edf0f5" } } },
-          series: [
-            {
-              name: "K线",
-              type: "candlestick",
-              data,
-              itemStyle: {
-                color: "#d92d20",
-                color0: "#079455",
-                borderColor: "#d92d20",
-                borderColor0: "#079455",
-              },
-              markArea:
-                splitIndex > 0
-                  ? {
-                      itemStyle: { color: "rgba(37, 99, 235, 0.08)" },
-                      data: [[{ xAxis: categories[splitIndex] }, { xAxis: categories[categories.length - 1] }]],
-                    }
-                  : undefined,
-              markLine: {
-                symbol: "none",
-                lineStyle: { color: "#2563eb", type: "dashed" },
-                label: { formatter: "预测区间" },
-                data: markLineData,
-              },
-            },
-            {
-              name: "MA5",
-              type: "line",
-              data: maSeries("ma5"),
-              smooth: true,
-              showSymbol: false,
-              lineStyle: { width: 1.4, color: "#f59e0b" },
-            },
-            {
-              name: "MA10",
-              type: "line",
-              data: maSeries("ma10"),
-              smooth: true,
-              showSymbol: false,
-              lineStyle: { width: 1.4, color: "#8b5cf6" },
-            },
-            {
-              name: "MA20",
-              type: "line",
-              data: maSeries("ma20"),
-              smooth: true,
-              showSymbol: false,
-              lineStyle: { width: 1.7, color: "#2563eb" },
-            },
-            {
-              name: "MA60",
-              type: "line",
-              data: maSeries("ma60"),
-              smooth: true,
-              showSymbol: false,
-              lineStyle: { width: 1.5, color: "#64748b" },
-            },
-            {
-              name: "MA120",
-              type: "line",
-              data: maSeries("ma120"),
-              smooth: true,
-              showSymbol: false,
-              lineStyle: { width: 1.2, color: "#14b8a6" },
-            },
-            {
-              name: "MA250",
-              type: "line",
-              data: maSeries("ma250"),
-              smooth: true,
-              showSymbol: false,
-              lineStyle: { width: 1.2, color: "#334155" },
-            },
-          ],
-          legend: {
-            top: 28,
-            right: 20,
-            data: ["K线", "MA5", "MA10", "MA20", "MA60", "MA120", "MA250"],
-          },
-        });
       }
 
       function renderFactors(chart) {
@@ -959,11 +801,255 @@
           .join("");
       }
 
+      function renderConsensus(chart) {
+        const consensus = chart.model_consensus || {
+          consensus_probability: 0.5,
+          disagreement_level: "未知",
+          summary: "暂无模型共识信息。",
+          details: [],
+        };
+        $("consensusTitle").textContent = `${consensus.disagreement_level} · 共识上涨概率 ${Math.round(Number(consensus.consensus_probability) * 100)}%`;
+        $("consensusSummary").textContent = consensus.summary;
+        $("consensusDetails").innerHTML = (consensus.details || [])
+          .map((item) => `<li>${item}</li>`)
+          .join("");
+      }
+
+      function buildMockIndicators(points) {
+        return points.map((item, index) => {
+          const avg = (windowSize) => {
+            if (index + 1 < windowSize) return null;
+            const slice = points.slice(index + 1 - windowSize, index + 1);
+            return slice.reduce((sum, point) => sum + point.close, 0) / windowSize;
+          };
+          return {
+            date: item.date,
+            ma5: avg(5),
+            ma10: avg(10),
+            ma20: avg(20),
+            ma60: avg(60),
+            ma120: avg(120),
+            ma250: avg(250),
+          };
+        });
+      }
+
+      function makeBar(index, close, predicted) {
+        const open = close * (1 + (Math.random() - 0.5) * 0.008);
+        return {
+          date: predicted ? `预测${index}` : `T-${index}`,
+          open,
+          high: Math.max(open, close) * 1.01,
+          low: Math.min(open, close) * 0.99,
+          close,
+          volume: 1,
+          predicted,
+        };
+      }
+
+      function mockChart(symbol) {
+        const base = symbol.startsWith("600519") ? 1700 : symbol.startsWith("300750") ? 210 : 100;
+        const history = [];
+        const future = [];
+        let close = base;
+        for (let index = 260; index > 0; index -= 1) {
+          close *= 1 + Math.sin(index / 7) * 0.003 + (Math.random() - 0.5) * 0.012;
+          history.push(makeBar(index, close, false));
+        }
+        for (let index = 1; index <= 12; index += 1) {
+          close *= 1 + 0.002 + (Math.random() - 0.5) * 0.014;
+          future.push(makeBar(index, close, true));
+        }
+        return {
+          symbol,
+          name: nameOf(symbol),
+          analysis: `${nameOf(symbol)}离线预测：未来短期走势偏震荡，建议连接本地 API 获取真实分析。`,
+          risk_summary: "离线风险提示：当前结果为演示数据。",
+          analysis_sections: [],
+          strategy_description: "离线演示采用简化启发式策略。",
+          factor_contributions: [],
+          validation_metrics: [],
+          model_diagnostics: [],
+          model_consensus: { consensus_probability: 0.5, disagreement_level: "离线演示", summary: "连接后端后展示模型共识。", details: [] },
+          history,
+          future,
+          indicators: buildMockIndicators([...history, ...future]),
+          trade_signals: [],
+        };
+      }
+
+      function drawKline(chart) {
+        const mode = $("chartMode").value;
+        const points = [
+          ...(mode !== "future" ? chart.history : []),
+          ...(mode !== "history" ? chart.future : []),
+        ];
+        if (!points.length) return;
+        if (!window.echarts) {
+          $("status").textContent = "ECharts 未加载，请确认浏览器可以访问 CDN。";
+          return;
+        }
+        if (!chartInstance) {
+          chartInstance = echarts.init($("kline"));
+          window.addEventListener("resize", () => chartInstance.resize());
+        }
+        const categories = points.map((item) => item.date);
+        const data = points.map((item) => [item.open, item.close, item.low, item.high]);
+        const indicatorByDate = new Map((chart.indicators || []).map((item) => [item.date, item]));
+        const maSeries = (key) =>
+          categories.map((date) => {
+            const value = indicatorByDate.get(date)?.[key];
+            return value == null ? null : Number(value).toFixed(2);
+          });
+        const signalMarkPoints = (chart.trade_signals || [])
+          .filter((signal) => categories.includes(signal.date))
+          .map((signal) => ({
+            name: `${signal.predicted ? "预测" : ""}${signal.action === "buy" ? "买点" : "卖点"}`,
+            coord: [signal.date, Number(signal.price)],
+            value: `${signal.predicted ? "预测" : ""}${signal.action === "buy" ? "买" : "卖"} ${Math.round(Number(signal.strength) * 100)}%`,
+            symbol: signal.action === "buy" ? "triangle" : "pin",
+            symbolSize: signal.action === "buy" ? 16 : 18,
+            itemStyle: { color: signal.action === "buy" ? "#d92d20" : "#079455" },
+            label: { color: "#101828", formatter: `${signal.predicted ? "预测" : ""}${signal.action === "buy" ? "买" : "卖"}` },
+            reason: signal.reason,
+          }));
+        const splitIndex = points.findIndex((item) => item.predicted);
+        const markLineData = splitIndex > 0 ? [{ xAxis: categories[splitIndex], name: "预测开始" }] : [];
+        chartInstance.setOption({
+          animation: false,
+          title: {
+            text: `${chart.name} ${chart.symbol} 未来走势K线预测`,
+            left: 12,
+            top: 8,
+            textStyle: { fontSize: 15 },
+          },
+          tooltip: {
+            trigger: "axis",
+            axisPointer: { type: "cross" },
+            formatter(params) {
+              const candle = params.find((item) => item.seriesName === "K线");
+              const date = candle?.axisValue || params[0]?.axisValue || "";
+              const signals = (chart.trade_signals || []).filter((signal) => signal.date === date);
+              const lines = [];
+              if (candle?.data) {
+                const value = candle.data;
+                lines.push(date);
+                lines.push(`开盘：${Number(value[1]).toFixed(2)}`);
+                lines.push(`收盘：${Number(value[2]).toFixed(2)}`);
+                lines.push(`最低：${Number(value[3]).toFixed(2)}`);
+                lines.push(`最高：${Number(value[4]).toFixed(2)}`);
+              }
+              signals.forEach((signal) => {
+                lines.push(
+                  `${signal.predicted ? "预测" : ""}${signal.action === "buy" ? "买点" : "卖点"}：强度 ${Math.round(Number(signal.strength) * 100)}%`,
+                );
+                lines.push(`理由：${signal.reason || "模型综合信号触发"}`);
+              });
+              return lines.join("<br />");
+            },
+          },
+          legend: { top: 28, right: 20, data: ["K线", "MA5", "MA10", "MA20", "MA60", "MA120", "MA250"] },
+          grid: { left: 58, right: 24, top: 58, bottom: 64 },
+          dataZoom: [
+            { type: "inside", start: 0, end: 100 },
+            { type: "slider", height: 22, bottom: 22, start: 0, end: 100 },
+          ],
+          xAxis: { type: "category", data: categories, boundaryGap: true, axisLine: { onZero: false } },
+          yAxis: { scale: true, splitLine: { lineStyle: { color: "#edf0f5" } } },
+          series: [
+            {
+              name: "K线",
+              type: "candlestick",
+              data,
+              itemStyle: {
+                color: "#d92d20",
+                color0: "#079455",
+                borderColor: "#d92d20",
+                borderColor0: "#079455",
+              },
+              markPoint: {
+                data: signalMarkPoints,
+                tooltip: {
+                  formatter(item) {
+                    return `${item.name}<br />${item.value}<br />${item.data.reason || ""}`;
+                  },
+                },
+              },
+              markArea:
+                splitIndex > 0
+                  ? {
+                      itemStyle: { color: "rgba(37, 99, 235, 0.08)" },
+                      data: [[{ xAxis: categories[splitIndex] }, { xAxis: categories[categories.length - 1] }]],
+                    }
+                  : undefined,
+              markLine: {
+                symbol: "none",
+                lineStyle: { color: "#2563eb", type: "dashed" },
+                label: { formatter: "预测区间" },
+                data: markLineData,
+              },
+            },
+            { name: "MA5", type: "line", data: maSeries("ma5"), smooth: true, showSymbol: false, lineStyle: { width: 1.4, color: "#f59e0b" } },
+            { name: "MA10", type: "line", data: maSeries("ma10"), smooth: true, showSymbol: false, lineStyle: { width: 1.4, color: "#8b5cf6" } },
+            { name: "MA20", type: "line", data: maSeries("ma20"), smooth: true, showSymbol: false, lineStyle: { width: 1.7, color: "#2563eb" } },
+            { name: "MA60", type: "line", data: maSeries("ma60"), smooth: true, showSymbol: false, lineStyle: { width: 1.5, color: "#64748b" } },
+            { name: "MA120", type: "line", data: maSeries("ma120"), smooth: true, showSymbol: false, lineStyle: { width: 1.2, color: "#14b8a6" } },
+            { name: "MA250", type: "line", data: maSeries("ma250"), smooth: true, showSymbol: false, lineStyle: { width: 1.2, color: "#334155" } },
+          ],
+        });
+      }
+
+      async function loadChart(targetSymbol) {
+        const requestedSymbol = typeof targetSymbol === "string" ? targetSymbol : "";
+        const symbol = requestedSymbol || $("chartSymbol").value || $("benchmark").value;
+        if (requestedSymbol) $("chartSymbol").value = requestedSymbol;
+        const benchmark = $("benchmark").value;
+        const modelMode = $("modelMode").value;
+        $("status").textContent = "正在生成K线预测...";
+        const provider = await updateBackendStatus();
+        try {
+          const chart = await fetchJson(`/chart/prediction/${symbol}?benchmark=${benchmark}&model_mode=${modelMode}`);
+          drawKline(chart);
+          $("analysis").textContent = chart.analysis;
+          $("risk").textContent = provider === "mock" ? "当前后端数据源仍为 Mock模拟行情。要查看真实K线，请将 .env 设置为 DATA_PROVIDER=akshare 并重启 API。" : chart.risk_summary;
+          renderSections(chart.analysis_sections);
+          renderFactors(chart);
+          renderValidation(chart);
+          renderMlDiagnostics(chart);
+          renderConsensus(chart);
+        } catch (error) {
+          if (provider === "offline") {
+            const chart = mockChart(symbol);
+            drawKline(chart);
+            $("analysis").textContent = chart.analysis;
+            $("risk").textContent = chart.risk_summary;
+            renderSections(chart.analysis_sections);
+            renderFactors(chart);
+            renderValidation(chart);
+            renderMlDiagnostics(chart);
+            renderConsensus(chart);
+            $("status").textContent = "未连接本地 API，已使用离线K线演示。";
+          } else {
+            $("status").textContent = `已连接本地 API，但 ${symbol} 数据获取失败。`;
+            $("analysis").textContent = `${nameOf(symbol)} 数据获取失败，请换一个标的或稍后重试。`;
+            $("risk").textContent = error.message;
+          }
+        }
+      }
+
       async function loadSectorOpportunities() {
-        $("sectorSummary").textContent = "正在扫描行业板块...";
+        $("sectorSummary").textContent = "正在扫描行业板块，AKShare 实时行情可能需要 30-60 秒...";
         try {
           const report = await fetchJson("/opportunities/sectors?limit=8");
           $("sectorSummary").textContent = `${report.summary} ${report.methodology || ""}`;
+          if (!report.sectors.length) {
+            $("sectors").innerHTML = `
+              <tr>
+                <td colspan="6" class="muted">没有返回板块结果。请确认已在当前虚拟环境安装 akshare，并重启本地 API。</td>
+              </tr>
+            `;
+            return;
+          }
           $("sectors").innerHTML = report.sectors
             .map(
               (item) => `
@@ -974,44 +1060,78 @@
                   <td>${item.change_pct == null ? "-" : `${Number(item.change_pct).toFixed(2)}%`}</td>
                   <td>${item.leader || "-"}</td>
                   <td>
-                    <strong>机会：</strong>${item.reasons.join("；")}<br />
-                    <span class="risk"><strong>风险：</strong>${item.risks.join("；")}</span><br />
-                    <span class="muted"><strong>观察：</strong>${item.watch_points.join("；")}</span>
+                    <div class="evidence-grid">
+                      <div class="evidence-line"><strong>实时快照：</strong>涨跌幅 ${item.change_pct == null ? "暂无" : `${Number(item.change_pct).toFixed(2)}%`}；换手率 ${item.turnover_rate == null ? "暂无" : `${Number(item.turnover_rate).toFixed(2)}%`}；领涨股 ${item.leader || "暂无"}</div>
+                      <div class="evidence-line"><strong>板块K线：</strong>${item.trend_summary || "暂无板块K线数据"}</div>
+                      <div class="evidence-line"><strong>成分扩散：</strong>${item.breadth_summary || "暂无成分股扩散数据"}</div>
+                      <div class="evidence-line"><strong>新闻情绪：</strong>${item.news_summary || "暂无新闻情绪数据"}</div>
+                      <div><strong>机会：</strong>${item.reasons.join("；")}</div>
+                      <div class="risk"><strong>风险：</strong>${item.risks.join("；")}</div>
+                      <div class="muted"><strong>观察：</strong>${item.watch_points.join("；")}</div>
+                    </div>
                   </td>
                 </tr>
               `,
             )
             .join("");
         } catch (error) {
-          $("sectorSummary").textContent = `板块扫描失败：${error.message}。请确认 API 已重启，且 .env 中 DATA_PROVIDER=akshare。`;
+          $("sectorSummary").textContent = `板块扫描失败：${error.message}`;
         }
       }
 
       async function loadStockOpportunities() {
-        $("stockSummary").textContent = "正在扫描全A股候选...";
+        $("stockSummary").textContent = "正在扫描全A股候选，AKShare 全市场快照可能需要 30-60 秒...";
         try {
-          const report = await fetchJson("/opportunities/stocks?limit=30");
+          const report = await fetchJson("/opportunities/stocks/grouped?limit=60");
           $("stockSummary").textContent = `${report.summary} ${report.methodology || ""}`;
-          $("stockOpportunities").innerHTML = report.stocks
-            .map(
-              (item) => `
-                <tr>
-                  <td>${item.name} ${item.symbol}</td>
-                  <td>${item.rating || "-"}</td>
-                  <td>${Number(item.score).toFixed(3)}</td>
-                  <td>${item.change_pct == null ? "-" : `${Number(item.change_pct).toFixed(2)}%`}</td>
-                  <td>${item.volume_ratio == null ? "-" : Number(item.volume_ratio).toFixed(2)}</td>
-                  <td>
-                    <strong>机会：</strong>${item.reasons.join("；")}<br />
-                    <span class="risk"><strong>风险：</strong>${item.risks.join("；")}</span><br />
-                    <span class="muted"><strong>观察：</strong>${item.watch_points.join("；")}</span>
-                  </td>
-                  <td><button style="width:72px;height:30px;margin:0" data-add="${item.symbol}">加入</button></td>
-                </tr>
-              `,
-            )
+          if (!report.groups.length) {
+            $("stockGroups").innerHTML = `
+              <section class="compact-section" style="margin-top:12px">
+                <p class="muted">没有返回全A股候选结果。请确认已在当前虚拟环境安装 akshare，并重启本地 API。</p>
+              </section>
+            `;
+            return;
+          }
+          $("stockGroups").innerHTML = report.groups
+            .map((group) => {
+              const rows = group.stocks
+                .map(
+                  (item) => `
+                    <tr>
+                      <td>${item.name} ${item.symbol}</td>
+                      <td>${item.rating || "-"}</td>
+                      <td>${Number(item.score).toFixed(3)}</td>
+                      <td>${item.change_pct == null ? "-" : `${Number(item.change_pct).toFixed(2)}%`}</td>
+                      <td>${item.volume_ratio == null ? "-" : Number(item.volume_ratio).toFixed(2)}</td>
+                      <td>
+                        <strong>机会：</strong>${item.reasons.join("；")}<br />
+                        <span class="muted"><strong>K线：</strong>${item.trend_summary || "暂无"}</span><br />
+                        <span class="muted"><strong>资金：</strong>${item.fund_flow_summary || "暂无"}</span><br />
+                        <span class="risk"><strong>风险：</strong>${item.risks.join("；")}</span><br />
+                        <span class="muted"><strong>观察：</strong>${item.watch_points.join("；")}</span>
+                      </td>
+                      <td><button style="width:72px;height:30px;margin:0" data-add="${item.symbol}">加入</button></td>
+                    </tr>
+                  `,
+                )
+                .join("");
+              return `
+                <section class="compact-section" style="margin-top:12px">
+                  <strong>${group.sector}</strong>
+                  <p class="muted">板块评分 ${Number(group.sector_score).toFixed(3)} · ${group.sector_reasons.join("；")}</p>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>股票</th><th>评级</th><th>评分</th><th>涨跌幅</th><th>量比</th><th>机会逻辑 / 风险 / 观察点</th><th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                  </table>
+                </section>
+              `;
+            })
             .join("");
-          $("stockOpportunities").querySelectorAll("button").forEach((button) => {
+          $("stockGroups").querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", () => {
               const symbol = button.dataset.add;
               if (!pool.includes(symbol)) {
@@ -1027,57 +1147,7 @@
             });
           });
         } catch (error) {
-          $("stockSummary").textContent = `全A股扫描失败：${error.message}。请确认 API 已重启，且 .env 中 DATA_PROVIDER=akshare。`;
-        }
-      }
-
-      async function loadChart(targetSymbol) {
-        const requestedSymbol = typeof targetSymbol === "string" ? targetSymbol : "";
-        const symbol = requestedSymbol || $("chartSymbol").value || $("benchmark").value;
-        if (requestedSymbol) {
-          $("chartSymbol").value = requestedSymbol;
-        }
-        const benchmark = $("benchmark").value;
-        const modelMode = $("modelMode").value;
-        $("status").textContent = "正在生成K线预测...";
-        const provider = await updateBackendStatus();
-        try {
-          const chart = await fetchJson(
-            `/chart/prediction/${symbol}?benchmark=${benchmark}&model_mode=${modelMode}`,
-          );
-          drawKline(chart);
-          $("analysis").textContent = chart.analysis;
-          $("risk").textContent = chart.risk_summary;
-          renderSections(chart.analysis_sections);
-          renderFactors(chart);
-          renderValidation(chart);
-          renderMlDiagnostics(chart);
-          if (provider === "mock") {
-            $("risk").textContent = "当前后端数据源仍为 Mock模拟行情。要查看真实K线，请将 .env 设置为 DATA_PROVIDER=akshare 并重启 API。";
-          }
-        } catch (error) {
-          if (provider === "offline") {
-            const chart = mockChart(symbol);
-            drawKline(chart);
-            $("analysis").textContent = chart.analysis;
-            $("risk").textContent = chart.risk_summary;
-            renderSections(chart.analysis_sections);
-            renderFactors(chart);
-            renderValidation(chart);
-            renderMlDiagnostics(chart);
-            $("status").textContent = "未连接本地 API，已使用离线K线演示。";
-          } else {
-            $("status").textContent = `已连接本地 API，但 ${symbol} 数据获取失败。`;
-            $("analysis").textContent = `${nameOf(symbol)} 数据获取失败，请换一个标的或稍后重试。`;
-            $("risk").textContent = error.message;
-            renderSections([]);
-            renderFactors({
-              strategy_description: "该标的数据获取失败，暂时无法生成预测原因。",
-              factor_contributions: [],
-            });
-            renderValidation({ validation_metrics: [] });
-            renderMlDiagnostics({ model_diagnostics: [] });
-          }
+          $("stockSummary").textContent = `全A股扫描失败：${error.message}`;
         }
       }
 

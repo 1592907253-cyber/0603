@@ -18,9 +18,11 @@ from agent_trading.schemas import (
     IndicatorPoint,
     KlinePoint,
     MarketForecast,
+    ModelConsensus,
     ModelDiagnostic,
     PredictionChart,
     StockForecast,
+    TradeSignalPoint,
     ValidationMetric,
 )
 
@@ -229,11 +231,13 @@ class HeuristicForecastModel:
         validation_metrics = self._validation_metrics(history)
         model_diagnostics = self._model_diagnostics(history)
         model_diagnostics.extend(self._deep_diagnostics(history))
+        model_consensus = self._model_consensus(validation_metrics, model_diagnostics)
         adjustment = self._model_adjustment(model_diagnostics, model_mode)
         if abs(adjustment) > 0:
             forecast.forecasts[1].expected_return = forecast.forecasts[1].expected_return + adjustment
         future = self._project_future_klines(history_tail, forecast.forecasts, future_days)
         indicators = self._indicator_points(history_tail, future)
+        trade_signals = self._trade_signal_points(history_tail, future)
 
         if isinstance(forecast, MarketForecast):
             analysis = self._market_analysis_cn(name, forecast)
@@ -271,10 +275,12 @@ class HeuristicForecastModel:
             factor_contributions=factor_contributions,
             validation_metrics=validation_metrics,
             model_diagnostics=model_diagnostics,
+            model_consensus=model_consensus,
             selected_model_mode=model_mode,
             history=self._to_kline_points(history_tail, predicted=False),
             future=future,
             indicators=indicators,
+            trade_signals=trade_signals,
             explanations=explanations,
         )
 
@@ -332,12 +338,8 @@ class HeuristicForecastModel:
 
         points: list[KlinePoint] = []
         prev_close = last_close
-        current_date = last_date
-        for step in range(1, future_days + 1):
-            current_date = current_date + timedelta(days=1)
-            while current_date.weekday() >= 5:
-                current_date = current_date + timedelta(days=1)
-
+        future_dates = pd.bdate_range(last_date + timedelta(days=1), periods=future_days)
+        for current_date in future_dates:
             noise = rng.normal(0, volatility * 0.35)
             close = prev_close * (1 + daily_drift + noise)
             open_ = prev_close * (1 + rng.normal(0, volatility * 0.18))
@@ -414,6 +416,330 @@ class HeuristicForecastModel:
                 )
             )
         return points
+
+    def _trade_signal_points(
+        self,
+        history: pd.DataFrame,
+        future: list[KlinePoint],
+    ) -> list[TradeSignalPoint]:
+        future_frame = pd.DataFrame(
+            {
+                "open": [item.open for item in future],
+                "high": [item.high for item in future],
+                "low": [item.low for item in future],
+                "close": [item.close for item in future],
+                "volume": [item.volume for item in future],
+                "amount": [item.volume * item.close for item in future],
+                "predicted": [item.predicted for item in future],
+            },
+            index=pd.to_datetime([item.date for item in future]),
+        )
+        history_frame = history.copy()
+        history_frame["predicted"] = False
+        combined = pd.concat([history_frame, future_frame]).sort_index()
+        if len(combined) < 80:
+            return []
+
+        close = pd.to_numeric(combined["close"], errors="coerce")
+        high = pd.to_numeric(combined["high"], errors="coerce")
+        low = pd.to_numeric(combined["low"], errors="coerce")
+        volume = pd.to_numeric(combined["volume"], errors="coerce").replace(0, pd.NA)
+
+        ema20 = close.ewm(span=20, adjust=False).mean()
+        ema60 = close.ewm(span=60, adjust=False).mean()
+        ema12 = close.ewm(span=12, adjust=False).mean()
+        ema26 = close.ewm(span=26, adjust=False).mean()
+        dif = ema12 - ema26
+        dea = dif.ewm(span=9, adjust=False).mean()
+        macd_hist = dif - dea
+        delta = close.diff()
+        gain = delta.clip(lower=0).rolling(14).mean()
+        loss = (-delta.clip(upper=0)).rolling(14).mean().replace(0, pd.NA)
+        rsi = 100 - 100 / (1 + gain / loss)
+        true_range = pd.concat(
+            [
+                high - low,
+                (high - close.shift()).abs(),
+                (low - close.shift()).abs(),
+            ],
+            axis=1,
+        ).max(axis=1)
+        atr = true_range.ewm(alpha=1 / 14, adjust=False).mean()
+        atr_pct = atr / close
+        volume_ratio = volume.rolling(5).mean() / volume.rolling(20).mean()
+        price_volume_macd = macd_hist * (1 + (volume_ratio - 1).clip(-0.4, 0.8))
+        price_volume_macd = price_volume_macd / (1 + (atr_pct * 8).clip(0, 1.2))
+        donchian_high = high.rolling(20).max().shift(1)
+        donchian_low = low.rolling(10).min().shift(1)
+        close_high_60 = close.rolling(60).max().shift(1)
+        ret_1d = close.pct_change()
+        ret_5d = close.pct_change(5)
+        ret_20d = close.pct_change(20)
+        ma_gap = close / ema20 - 1
+        trend_gap = ema20 / ema60 - 1
+        swing_low = (
+            (low.shift(2) < low.shift(4))
+            & (low.shift(2) < low.shift(3))
+            & (low.shift(2) < low.shift(1))
+            & (low.shift(2) < low)
+        )
+        swing_high = (
+            (high.shift(2) > high.shift(4))
+            & (high.shift(2) > high.shift(3))
+            & (high.shift(2) > high.shift(1))
+            & (high.shift(2) > high)
+        )
+
+        def buy_setup(idx: int) -> tuple[bool, list[str], float]:
+            if idx < 65 or pd.isna(close.iloc[idx]) or pd.isna(atr.iloc[idx]):
+                return False, [], 0.0
+            trend_ok = bool(close.iloc[idx] > ema20.iloc[idx] > ema60.iloc[idx])
+            breakout = bool(close.iloc[idx] > donchian_high.iloc[idx])
+            early_breakout = bool(close.iloc[idx] > close_high_60.iloc[idx] and volume_ratio.iloc[idx] > 1.05)
+            pullback_turn = bool(
+                swing_low.iloc[idx]
+                and close.iloc[idx] > high.iloc[idx - 2]
+                and close.iloc[idx] > ema20.iloc[idx]
+            )
+            momentum_ok = bool(
+                price_volume_macd.iloc[idx] > price_volume_macd.iloc[idx - 1]
+                and price_volume_macd.iloc[idx] > price_volume_macd.iloc[idx - 3]
+            )
+            rsi_value = float(rsi.iloc[idx]) if pd.notna(rsi.iloc[idx]) else 50.0
+            rsi_ok = 38 <= rsi_value <= 72
+            volatility_ok = bool(0.008 <= atr_pct.iloc[idx] <= 0.065) if pd.notna(atr_pct.iloc[idx]) else True
+            volume_ok = bool(volume_ratio.iloc[idx] > 0.9) if pd.notna(volume_ratio.iloc[idx]) else False
+            reasons: list[str] = []
+            if breakout:
+                reasons.append("突破20日唐奇安上轨")
+            if early_breakout:
+                reasons.append("创60日收盘新高且量能确认")
+            if pullback_turn:
+                reasons.append("上升趋势中分形低点确认后转强")
+            if trend_ok:
+                reasons.append("价格位于EMA20/EMA60上方")
+            if momentum_ok:
+                reasons.append("量价调整MACD改善")
+            if rsi_ok:
+                reasons.append(f"RSI {rsi_value:.0f}，处于可交易区间")
+            score = (
+                (0.28 if breakout else 0.0)
+                + (0.22 if early_breakout else 0.0)
+                + (0.2 if pullback_turn else 0.0)
+                + (0.16 if trend_ok else 0.0)
+                + (0.1 if momentum_ok else 0.0)
+                + (0.04 if rsi_ok and volume_ok and volatility_ok else 0.0)
+            )
+            return score >= 0.5 and bool(breakout or early_breakout or pullback_turn), reasons, score
+
+        def historical_success_rate(idx: int) -> tuple[float, int]:
+            start = max(65, idx - 320)
+            end = min(idx - 12, len(history_frame) - 12)
+            if end <= start:
+                return 0.5, 0
+            wins = 0
+            samples = 0
+            for past_idx in range(start, end):
+                is_setup, _, _ = buy_setup(past_idx)
+                if not is_setup or pd.isna(atr.iloc[past_idx]):
+                    continue
+                future_slice = close.iloc[past_idx + 1 : past_idx + 11]
+                low_slice = low.iloc[past_idx + 1 : past_idx + 11]
+                if future_slice.empty:
+                    continue
+                entry = close.iloc[past_idx]
+                take_profit = entry + atr.iloc[past_idx] * 1.6
+                stop_loss = entry - atr.iloc[past_idx] * 1.1
+                hit_profit = bool((future_slice >= take_profit).any())
+                hit_stop = bool((low_slice <= stop_loss).any())
+                final_gain = future_slice.iloc[-1] > entry * 1.012
+                wins += int((hit_profit and not hit_stop) or final_gain)
+                samples += 1
+            if samples < 6:
+                return 0.5, samples
+            return wins / samples, samples
+
+        feature_frame = pd.DataFrame(
+            {
+                "ret_1d": ret_1d,
+                "ret_5d": ret_5d,
+                "ret_20d": ret_20d,
+                "ma_gap": ma_gap,
+                "trend_gap": trend_gap,
+                "rsi": rsi,
+                "macd": price_volume_macd,
+                "atr_pct": atr_pct,
+                "volume_ratio": volume_ratio,
+                "distance_high": close / donchian_high - 1,
+                "distance_low": close / donchian_low - 1,
+            }
+        ).replace([np.inf, -np.inf], np.nan)
+
+        ml_probability = pd.Series(0.5, index=combined.index)
+        ml_samples = 0
+        try:
+            from sklearn.ensemble import HistGradientBoostingClassifier
+            from sklearn.impute import SimpleImputer
+            from sklearn.pipeline import Pipeline
+
+            labels: list[int] = []
+            train_rows: list[pd.Series] = []
+            history_limit = len(history_frame)
+            for idx in range(80, max(80, history_limit - 6)):
+                if feature_frame.iloc[idx].isna().all() or pd.isna(atr.iloc[idx]):
+                    continue
+                entry = close.iloc[idx]
+                upper_barrier = entry + atr.iloc[idx] * 1.4
+                lower_barrier = entry - atr.iloc[idx] * 1.1
+                future_high = high.iloc[idx + 1 : idx + 6]
+                future_low = low.iloc[idx + 1 : idx + 6]
+                future_close = close.iloc[idx + 5]
+                if future_high.empty or future_low.empty or pd.isna(future_close):
+                    continue
+                hit_up_positions = np.where(future_high.to_numpy() >= upper_barrier)[0]
+                hit_down_positions = np.where(future_low.to_numpy() <= lower_barrier)[0]
+                first_up = int(hit_up_positions[0]) if len(hit_up_positions) else 99
+                first_down = int(hit_down_positions[0]) if len(hit_down_positions) else 99
+                if first_up < first_down:
+                    label = 1
+                elif first_down < first_up:
+                    label = 0
+                else:
+                    label = int(future_close > entry * 1.006)
+                train_rows.append(feature_frame.iloc[idx])
+                labels.append(label)
+            if len(set(labels)) == 2 and len(labels) >= 90:
+                model = Pipeline(
+                    [
+                        ("imputer", SimpleImputer(strategy="median")),
+                        (
+                            "clf",
+                            HistGradientBoostingClassifier(
+                                max_iter=80,
+                                max_leaf_nodes=15,
+                                learning_rate=0.06,
+                                l2_regularization=0.08,
+                                random_state=7,
+                            ),
+                        ),
+                    ]
+                )
+                x_train = pd.DataFrame(train_rows)
+                model.fit(x_train, labels)
+                probabilities = model.predict_proba(feature_frame)
+                positive_index = list(model.classes_).index(1)
+                ml_probability = pd.Series(probabilities[:, positive_index], index=combined.index)
+                ml_samples = len(labels)
+        except Exception:
+            ml_probability = pd.Series(0.5, index=combined.index)
+            ml_samples = 0
+
+        signals: list[TradeSignalPoint] = []
+        start_index = max(80, len(combined) - 320)
+        predicted_dates = set(future_frame.index)
+        holding = bool(close.iloc[start_index - 1] > ema20.iloc[start_index - 1] > ema60.iloc[start_index - 1])
+        entry_price = float(close.iloc[start_index - 1]) if holding else 0.0
+        highest_close = entry_price
+        last_signal_index = -999
+
+        for idx in range(start_index, len(combined)):
+            if idx - last_signal_index < 5:
+                continue
+            date_index = combined.index[idx]
+            price = float(close.iloc[idx])
+            if not np.isfinite(price):
+                continue
+
+            is_buy_setup, buy_reasons, setup_score = buy_setup(idx)
+            success_rate, sample_size = historical_success_rate(idx)
+            probability = float(ml_probability.iloc[idx]) if pd.notna(ml_probability.iloc[idx]) else 0.5
+            trend_bonus = 0.05 if close.iloc[idx] > ema20.iloc[idx] else 0.0
+            pullback_bonus = 0.06 if close.iloc[idx] > ema20.iloc[idx] and close.iloc[idx - 1] < ema20.iloc[idx - 1] else 0.0
+            calibrated_score = (
+                probability * 0.55
+                + setup_score * 0.25
+                + max(success_rate - 0.42, 0) * 0.28
+                + trend_bonus
+                + pullback_bonus
+            )
+            atr_stop = highest_close - float(atr.iloc[idx]) * 2.2 if holding and pd.notna(atr.iloc[idx]) else 0.0
+            stop_hit = bool(holding and atr_stop > 0 and close.iloc[idx] < atr_stop)
+            channel_exit = bool(close.iloc[idx] < donchian_low.iloc[idx])
+            fractal_exit = bool(swing_high.iloc[idx] and close.iloc[idx] < low.iloc[idx - 2])
+            trend_exit = bool(close.iloc[idx] < ema20.iloc[idx] and ema20.iloc[idx] < ema60.iloc[idx])
+            momentum_exit = bool(price_volume_macd.iloc[idx] < 0 and price_volume_macd.iloc[idx] < price_volume_macd.iloc[idx - 1])
+            rsi_value = float(rsi.iloc[idx]) if pd.notna(rsi.iloc[idx]) else 50.0
+            probability_exit = bool(probability < 0.43 and price < ema20.iloc[idx])
+            sell_score = (
+                (0.35 if stop_hit else 0.0)
+                + (0.25 if channel_exit else 0.0)
+                + (0.18 if fractal_exit else 0.0)
+                + (0.14 if trend_exit else 0.0)
+                + (0.08 if momentum_exit else 0.0)
+                + (0.14 if probability_exit else 0.0)
+                + (0.06 if rsi_value > 78 and price < close.iloc[idx - 1] else 0.0)
+            )
+
+            if holding:
+                highest_close = max(highest_close, price)
+
+            probability_buy = probability >= 0.58 and close.iloc[idx] > ema20.iloc[idx]
+            if not holding and (is_buy_setup or probability_buy) and calibrated_score >= 0.55:
+                buy_reasons.append(f"ML barrier上涨概率约{probability:.0%}" + (f"，训练样本{ml_samples}个" if ml_samples else ""))
+                if sample_size >= 6:
+                    buy_reasons.append(f"近似历史候选10日胜率约{success_rate:.0%}，样本{sample_size}个")
+                else:
+                    buy_reasons.append("历史相似样本不足，按形态与风险过滤触发")
+                if probability_buy and not is_buy_setup:
+                    buy_reasons.append("概率模型触发趋势内低位介入")
+                signals.append(
+                    TradeSignalPoint(
+                        date=date_index.strftime("%Y-%m-%d"),
+                        action="buy",
+                        price=price,
+                        strength=float(min(calibrated_score, 1.0)),
+                        reason="；".join(buy_reasons),
+                        predicted=date_index in predicted_dates,
+                    )
+                )
+                holding = True
+                entry_price = price
+                highest_close = price
+                last_signal_index = idx
+            elif holding and sell_score >= 0.45:
+                reasons = []
+                if stop_hit:
+                    reasons.append("跌破ATR动态止损线")
+                if channel_exit:
+                    reasons.append("跌破10日唐奇安下轨")
+                if fractal_exit:
+                    reasons.append("分形高点确认后跌破其低点")
+                if trend_exit:
+                    reasons.append("EMA20跌破EMA60且价格处于弱势")
+                if momentum_exit:
+                    reasons.append("量价调整MACD转弱")
+                if probability_exit:
+                    reasons.append(f"ML barrier上涨概率降至{probability:.0%}且跌破EMA20")
+                if rsi_value > 78:
+                    reasons.append(f"RSI {rsi_value:.0f}，存在短线过热")
+                if entry_price and price > entry_price:
+                    reasons.append(f"相对入场价浮盈约{price / entry_price - 1:.2%}，触发保护性退出")
+                signals.append(
+                    TradeSignalPoint(
+                        date=date_index.strftime("%Y-%m-%d"),
+                        action="sell",
+                        price=price,
+                        strength=float(min(sell_score, 1.0)),
+                        reason="；".join(reasons),
+                        predicted=date_index in predicted_dates,
+                    )
+                )
+                holding = False
+                entry_price = 0.0
+                highest_close = 0.0
+                last_signal_index = idx
+
+        return signals[-12:]
 
     def _nullable_float(self, value: object) -> float | None:
         if pd.isna(value):
@@ -507,6 +833,61 @@ class HeuristicForecastModel:
                 ],
             )
         ]
+
+    def _model_consensus(
+        self,
+        validation_metrics: list[ValidationMetric],
+        model_diagnostics: list[ModelDiagnostic],
+    ) -> ModelConsensus:
+        probability_items: list[tuple[str, float, float]] = []
+        for metric in validation_metrics:
+            if "上涨概率" in metric.value:
+                try:
+                    pct = float(metric.value.split("上涨概率", 1)[1].strip().rstrip("%")) / 100
+                    weight = 0.25 if "5日" in metric.name else 0.12
+                    probability_items.append((metric.name, pct, weight))
+                except Exception:
+                    continue
+        for diagnostic in model_diagnostics:
+            if diagnostic.train_samples <= 0:
+                continue
+            reliability = diagnostic.test_auc or diagnostic.test_accuracy or 0.5
+            weight = 0.25 + max(reliability - 0.5, 0) * 0.5
+            if diagnostic.model_name.lower().startswith("gru"):
+                weight *= 0.7
+            probability_items.append((diagnostic.model_name, diagnostic.probability_up, weight))
+
+        if not probability_items:
+            return ModelConsensus(
+                consensus_probability=0.5,
+                disagreement_level="样本不足",
+                summary="暂无足够模型输出形成共识。",
+                details=["当前结果主要依赖多因子规则和图形解释。"],
+            )
+
+        total_weight = sum(item[2] for item in probability_items) or 1
+        consensus = sum(probability * weight for _, probability, weight in probability_items) / total_weight
+        probabilities = [item[1] for item in probability_items]
+        spread = max(probabilities) - min(probabilities)
+        if spread >= 0.25:
+            level = "高分歧"
+            summary = "不同模型结论差异较大，建议降低仓位或等待更多确认信号。"
+        elif spread >= 0.12:
+            level = "中等分歧"
+            summary = "模型存在一定分歧，建议结合均线、量能和风险提示综合判断。"
+        else:
+            level = "低分歧"
+            summary = "模型输出较一致，预测可信度相对更高。"
+        details = [
+            f"{name}: {probability:.0%}，权重 {weight / total_weight:.0%}"
+            for name, probability, weight in probability_items
+        ]
+        return ModelConsensus(
+            consensus_probability=float(consensus),
+            disagreement_level=level,
+            summary=summary,
+            details=details,
+        )
 
     def _model_adjustment(self, diagnostics: list[ModelDiagnostic], model_mode: str) -> float:
         if model_mode == "factor":
@@ -688,6 +1069,9 @@ class HeuristicForecastModel:
         return (
             "当前版本采用透明多因子预测策略：综合趋势动量、短期延续、均线结构、"
             "波动惩罚、量能确认、回撤惩罚和新闻情绪，形成市场状态评分。"
+            "图上的买卖点采用ML barrier标签模型和meta-labeling风格过滤："
+            "先用未来收益/风险障碍训练上涨概率，再结合唐奇安突破、分形转强、"
+            "ATR动态止损和量价动量生成入场/退出点。"
             "该设计参考了多因子量化研究中的动量、风险、流动性和情绪维度；"
             "未来K线根据综合评分、近期波动率和预测收益生成，用于展示情景路径，"
             "不代表确定价格。"
@@ -697,6 +1081,9 @@ class HeuristicForecastModel:
         return (
             "当前版本采用透明多因子选股预测策略：综合相对强弱、绝对动量、"
             "短期延续、均线结构、量能确认、低波动质量、回撤控制和新闻情绪。"
+            "图上的买卖点采用ML barrier标签模型和meta-labeling风格过滤："
+            "先用未来收益/风险障碍训练上涨概率，再结合唐奇安突破、分形转强、"
+            "ATR动态止损和量价动量生成入场/退出点。"
             "跑赢概率由综合因子评分和相对基准收益共同决定，风险复核由回撤、"
             "波动和量能走弱共同约束。最终建议分为关注买入、继续观察和暂时规避。"
         )

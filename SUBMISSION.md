@@ -44,6 +44,9 @@ Current implementation supports:
 - ECharts professional candlestick chart
 - sector opportunity scan
 - full A-share stock opportunity scan
+- all A-share search through AKShare
+- ML barrier style buy/sell point markers on historical and predicted K-lines
+- real-time fund-flow fallback through Tonghuashun when Eastmoney is unstable
 - candidate ranking
 - FastAPI endpoints
 - static dashboard
@@ -55,14 +58,20 @@ Current implementation supports:
 cd E:\AgentTrading
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
-python -m uvicorn agent_trading.api.main:app --reload --host 127.0.0.1 --port 8000
+python -m pip install -e ".[dev,data]"
+.\.venv\Scripts\python.exe -m uvicorn agent_trading.api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 Open:
 
 ```text
 web/index.html
+```
+
+Windows shortcut:
+
+```powershell
+.\scripts\start_api.ps1
 ```
 
 ## Demo Script
@@ -76,6 +85,9 @@ web/index.html
 7. Show endpoints:
    - `/forecast/market/{symbol}`
    - `/forecast/stock/{symbol}`
+   - `/chart/prediction/{symbol}`
+   - `/opportunities/sectors`
+   - `/opportunities/stocks/grouped`
    - `/agents/research`
 
 ## Commit Requirement Reminder

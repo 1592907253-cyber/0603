@@ -4,12 +4,11 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
+from sklearn.inspection import permutation_importance
 from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 
 from agent_trading.features.technical import add_technical_features
 
@@ -70,7 +69,7 @@ class MLDirectionPredictor:
         test_prediction = (test_probability >= 0.5).astype(int)
         accuracy = float(accuracy_score(y_test, test_prediction))
         auc = float(roc_auc_score(y_test, test_probability))
-        top_features = self._feature_importance(model, x_train.columns)
+        top_features = self._feature_importance(model, x_test, y_test)
 
         return MLPrediction(
             probability_up=probability,
@@ -160,19 +159,28 @@ class MLDirectionPredictor:
             "HistGradientBoosting",
         )
 
-    def _feature_importance(self, model: object, columns: pd.Index) -> list[tuple[str, float]]:
+    def _feature_importance(
+        self,
+        model: object,
+        x_test: pd.DataFrame,
+        y_test: pd.Series,
+    ) -> list[tuple[str, float]]:
         estimator = model.named_steps.get("model") if isinstance(model, Pipeline) else model
         values = getattr(estimator, "feature_importances_", None)
-        if values is None:
-            # HistGradientBoosting has no built-in importance. Use logistic coefficients as a cheap proxy.
-            proxy = Pipeline(
-                steps=[
-                    ("imputer", SimpleImputer(strategy="median")),
-                    ("scaler", StandardScaler()),
-                    ("model", LogisticRegression(max_iter=500)),
-                ]
-            )
-            return [(column, 0.0) for column in columns[:5]]
+        columns = x_test.columns
+        if values is None or float(np.sum(np.abs(values))) == 0:
+            try:
+                result = permutation_importance(
+                    model,
+                    x_test,
+                    y_test,
+                    n_repeats=5,
+                    random_state=42,
+                    scoring="roc_auc",
+                )
+                values = np.maximum(result.importances_mean, 0)
+            except Exception:
+                values = self._correlation_importance(x_test, y_test)
         total = float(np.sum(np.abs(values))) or 1.0
         pairs = sorted(
             zip(columns.tolist(), (np.abs(values) / total).tolist(), strict=False),
@@ -180,3 +188,14 @@ class MLDirectionPredictor:
             reverse=True,
         )
         return [(name, float(value)) for name, value in pairs[:6]]
+
+    def _correlation_importance(self, x: pd.DataFrame, y: pd.Series) -> np.ndarray:
+        values = []
+        y_values = y.to_numpy(dtype=float)
+        for column in x.columns:
+            feature = x[column].fillna(x[column].median()).to_numpy(dtype=float)
+            if np.std(feature) == 0 or np.std(y_values) == 0:
+                values.append(0.0)
+                continue
+            values.append(abs(float(np.corrcoef(feature, y_values)[0, 1])))
+        return np.asarray(values)
